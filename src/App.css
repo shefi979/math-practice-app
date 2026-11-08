@@ -1,0 +1,195 @@
+body {
+  margin: 0;
+  background-color: #fffbeb;
+  font-family: 'Comic Sans MS', 'Chalkboard SE', 'Segoe UI', sans-serif;
+  color: #78350f;
+}
+
+.layout-container {
+  display: flex;
+  min-height: 100vh;
+}
+
+/* Sol Menyu */
+.sidebar {
+  width: 220px;
+  background: #fef3c7;
+  border-right: 3px solid #fde68a;
+  padding: 25px 15px;
+}
+
+.sidebar h3 {
+  margin-top: 0;
+  font-size: 18px;
+  color: #92400e;
+}
+
+.sidebar ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.sidebar li {
+  padding: 12px 16px;
+  margin-bottom: 8px;
+  border-radius: 14px;
+  cursor: pointer;
+  font-weight: bold;
+  transition: all 0.2s ease;
+  background: #fffdf5;
+  border: 2px solid transparent;
+}
+
+.sidebar li:hover {
+  background: #fde68a;
+}
+
+.sidebar li.active {
+  background: #f59e0b;
+  color: white;
+  border-color: #d97706;
+}
+
+/* Əsas Hissə */
+.main-content {
+  flex: 1;
+  padding: 30px 40px;
+  max-width: 650px;
+}
+
+.top-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30px;
+}
+
+.lang-btn {
+  background: #fef3c7;
+  border: 2px solid #f59e0b;
+  color: #92400e;
+  padding: 6px 14px;
+  border-radius: 16px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+/* Kağız Effekti (Paper-Card) */
+.paper-card {
+  background: #fffdf5;
+  border: 3px solid #fde68a;
+  border-radius: 24px;
+  padding: 40px 30px;
+  box-shadow: 0 12px 28px rgba(245, 158, 11, 0.15);
+  position: relative;
+  text-align: center;
+  animation: popIn 0.3s ease-in-out;
+}
+
+.card-badge {
+  position: absolute;
+  top: -14px;
+  left: 30px;
+  background: #f59e0b;
+  color: white;
+  padding: 4px 16px;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: bold;
+}
+
+.expression {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  font-size: 44px;
+  font-weight: bold;
+  color: #78350f;
+  margin: 15px 0 30px 0;
+}
+
+.card-input {
+  width: 90px;
+  height: 60px;
+  font-size: 32px;
+  text-align: center;
+  border: 3px solid #fcd34d;
+  border-radius: 16px;
+  background: #fff;
+  color: #b45309;
+  outline: none;
+}
+
+.card-input:focus {
+  border-color: #f59e0b;
+}
+
+.card-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+}
+
+.btn {
+  padding: 12px 24px;
+  font-size: 16px;
+  font-weight: bold;
+  border: none;
+  border-radius: 16px;
+  cursor: pointer;
+}
+
+.btn-check {
+  background: #f97316;
+  color: white;
+}
+
+.btn-next {
+  background: #fbbf24;
+  color: #78350f;
+}
+
+.feedback {
+  margin-top: 20px;
+  padding: 12px;
+  border-radius: 14px;
+  font-weight: bold;
+}
+
+.feedback.success { background: #dcfce7; color: #15803d; }
+.feedback.error { background: #fee2e2; color: #b91c1c; }
+
+/* Aşağı Hissə: Çətinliklər */
+.difficulty-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 30px;
+  background: #fef3c7;
+  padding: 12px 20px;
+  border-radius: 20px;
+  border: 2px solid #fde68a;
+}
+
+.diff-btn {
+  padding: 8px 16px;
+  border-radius: 12px;
+  border: 2px solid transparent;
+  background: #fff;
+  cursor: pointer;
+  font-weight: bold;
+  color: #78350f;
+}
+
+.diff-btn.active {
+  border-color: #f59e0b;
+  background: #fffdf5;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+}
+
+@keyframes popIn {
+  from { transform: scale(0.97); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
