@@ -8,23 +8,34 @@ import {
   Zap, 
   GraduationCap, 
   Eye, 
-  RefreshCw 
+  RefreshCw,
+  LogOut,
+  Trophy,
+  UserCheck,
+  Key,
+  School
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
 const TRANSLATIONS = {
   az: {
     title: 'Riyaziyyat Dəftəri 📜',
-    welcome: 'Dəftəri Açın! 📖',
-    enterDetails: 'Adınızı və sinfinizi yazaraq başlayın:',
+    welcome: 'Xoş Gəldiniz! 📖',
+    enterDetails: 'Profil növünü seçin və daxil olun:',
+    roleStudent: 'Şagird',
+    roleTeacher: 'Müəllim',
     nameLabel: 'AD VƏ SOYAD',
     gradeLabel: 'SİNİF',
     gradeSuffix: '-ci sinif',
-    startBtn: 'Dərsə Başla 🖋️',
+    teacherKeyLabel: 'MÜƏLLİM AÇARI (DISTINCT KEY)',
+    teacherKeyPlaceholder: 'Məsələn: MATH-TEACHER-99',
+    startBtn: 'Daxil Ol 🔑',
+    signOutBtn: 'Çıxış Et 🚪',
     student: 'Şagird',
+    teacher: 'Müəllim',
     practice: 'Təcrübə',
-    leaderboard: 'Top 10',
-    dashboard: 'Müəllim Paneli',
+    leaderboardTitle: '🏆 Liderlər Lövhəsi (Top 10)',
+    teacherSpaceTitle: '👨‍🏫 Müəllim Paneli',
     selectTopic: '1. MÖVZU SEÇİN',
     selectDiff: '2. ÇƏTİNLİK SƏVİYYƏSİ',
     solvePrompt: 'MISALI HƏLL EDİN 🖋️',
@@ -37,13 +48,10 @@ const TRANSLATIONS = {
     rank: 'Sıra',
     solved: 'Həll Olunan',
     xp: 'Ümumi XP',
-    time: 'Vaxt',
-    result: 'Nəticə',
-    correct: 'Düzgün',
-    wrong: 'Səhv',
     solutionTitle: 'ADDIM-ADDIM HƏLL YOLU:',
     correctAnsLabel: 'Düzgün Cavab:',
     authorFooter: '✨ Hazırladı: S.Ş. | Bütün hüquqlar qorunur',
+    streakResetMsg: '⚠️ Səhv cəhd! Streak 0 oldu.',
     topics: {
       integers_add_sub: '📜 Tam Ədədlər: Toplama & Çıxma',
       integers_mul_div: '🖋️ Tam Ədədlər: Vurma & Bölmə',
@@ -56,16 +64,22 @@ const TRANSLATIONS = {
   },
   en: {
     title: 'Math Notebook 📜',
-    welcome: 'Open the Notebook! 📖',
-    enterDetails: 'Enter your name and grade to start:',
+    welcome: 'Welcome! 📖',
+    enterDetails: 'Select your role and sign in:',
+    roleStudent: 'Student',
+    roleTeacher: 'Teacher',
     nameLabel: 'FULL NAME',
     gradeLabel: 'GRADE',
     gradeSuffix: 'th Grade',
-    startBtn: 'Start Practice 🖋️',
+    teacherKeyLabel: 'DISTINCT TEACHER KEY',
+    teacherKeyPlaceholder: 'e.g. MATH-TEACHER-99',
+    startBtn: 'Sign In 🔑',
+    signOutBtn: 'Sign Out 🚪',
     student: 'Student',
+    teacher: 'Teacher',
     practice: 'Practice',
-    leaderboard: 'Top 10',
-    dashboard: 'Teacher Dashboard',
+    leaderboardTitle: '🏆 Leaderboard (Top 10)',
+    teacherSpaceTitle: '👨‍🏫 Teacher Space',
     selectTopic: '1. SELECT TOPIC',
     selectDiff: '2. DIFFICULTY',
     solvePrompt: 'SOLVE THE PROBLEM 🖋️',
@@ -78,13 +92,10 @@ const TRANSLATIONS = {
     rank: 'Rank',
     solved: 'Solved',
     xp: 'Total XP',
-    time: 'Time',
-    result: 'Result',
-    correct: 'Correct',
-    wrong: 'Wrong',
     solutionTitle: 'STEP-BY-STEP SOLUTION:',
     correctAnsLabel: 'Correct Answer:',
     authorFooter: '✨ Created by S.Ş. | All rights reserved',
+    streakResetMsg: '⚠️ Wrong attempt! Streak reset to 0.',
     topics: {
       integers_add_sub: '📜 Integers: Add & Subtract',
       integers_mul_div: '🖋️ Integers: Multiply & Divide',
@@ -107,16 +118,12 @@ const TOPICS = {
 };
 
 const gcd = (a, b) => {
-  a = Math.abs(a);
-  b = Math.abs(b);
+  a = Math.abs(a); b = Math.abs(b);
   while (b) { const t = b; b = a % b; a = t; }
   return a;
 };
 
-const lcm = (a, b) => {
-  if (a === 0 || b === 0) return 0;
-  return Math.abs((a * b) / gcd(a, b));
-};
+const lcm = (a, b) => (a === 0 || b === 0) ? 0 : Math.abs((a * b) / gcd(a, b));
 
 const simplifyFraction = (num, den) => {
   if (den === 0) return { num: 0, den: 1 };
@@ -136,10 +143,14 @@ export default function App() {
   const [lang, setLang] = useState('az');
   const t = TRANSLATIONS[lang];
 
+  // Auth States
+  const [userRole, setUserRole] = useState(() => localStorage.getItem('math_user_role') || 'student');
   const [studentName, setStudentName] = useState(() => localStorage.getItem('math_student_name') || '');
   const [studentGrade, setStudentGrade] = useState(() => localStorage.getItem('math_student_grade') || '6');
-  const [isProfileSaved, setIsProfileSaved] = useState(() => !!localStorage.getItem('math_student_name'));
+  const [teacherKey, setTeacherKey] = useState(() => localStorage.getItem('math_teacher_key') || '');
+  const [isSignedIn, setIsSignedIn] = useState(() => !!localStorage.getItem('math_student_name') || !!localStorage.getItem('math_teacher_key'));
 
+  const [activeTab, setActiveTab] = useState('practice'); // 'practice', 'leaderboard', 'teacher_space'
   const [selectedTopic, setSelectedTopic] = useState(TOPICS.INTEGER_ADD_SUB);
   const [difficulty, setDifficulty] = useState('easy');
 
@@ -149,6 +160,7 @@ export default function App() {
   const [attempts, setAttempts] = useState(0);
   const [questionTimer, setQuestionTimer] = useState(0);
   const [questionStartTime, setQuestionStartTime] = useState(null);
+  const [lastQuestionKey, setLastQuestionKey] = useState('');
 
   const [score, setScore] = useState(0);
   const [streak, setStreak] = useState(0);
@@ -173,13 +185,52 @@ export default function App() {
     return () => clearInterval(interval);
   }, [questionStartTime, feedback]);
 
-  const saveProfile = (e) => {
+  const [isNewTeacher, setIsNewTeacher] = useState(false);
+  const [teacherNameInput, setTeacherNameInput] = useState('');
+
+  const generateTeacherKey = (name) => {
+    const prefix = 'TEACHER';
+    const randNum = Math.floor(1000 + Math.random() * 9000);
+    const cleanName = name.replace(/[^a-zA-Z0-9]/g, '').toUpperCase().slice(0, 4) || 'MATH';
+    return `${cleanName}-${randNum}`;
+  };
+
+  const handleSignIn = (e) => {
     e.preventDefault();
-    if (studentName.trim()) {
+    if (userRole === 'student' && studentName.trim()) {
+      localStorage.setItem('math_user_role', 'student');
       localStorage.setItem('math_student_name', studentName.trim());
       localStorage.setItem('math_student_grade', studentGrade);
-      setIsProfileSaved(true);
+      setIsSignedIn(true);
+    } else if (userRole === 'teacher') {
+      if (isNewTeacher) {
+        if (!teacherNameInput.trim()) return;
+        const generatedKey = generateTeacherKey(teacherNameInput.trim());
+        setTeacherKey(generatedKey);
+        localStorage.setItem('math_user_role', 'teacher');
+        localStorage.setItem('math_teacher_key', generatedKey);
+        localStorage.setItem('math_student_name', teacherNameInput.trim());
+        setIsSignedIn(true);
+        setActiveTab('teacher_space');
+      } else {
+        if (!teacherKey.trim()) return;
+        localStorage.setItem('math_user_role', 'teacher');
+        localStorage.setItem('math_teacher_key', teacherKey.trim());
+        localStorage.setItem('math_student_name', `Müəllim (${teacherKey.trim()})`);
+        setIsSignedIn(true);
+        setActiveTab('teacher_space');
+      }
     }
+  };
+
+  const handleSignOut = () => {
+    localStorage.removeItem('math_student_name');
+    localStorage.removeItem('math_student_grade');
+    localStorage.removeItem('math_teacher_key');
+    localStorage.removeItem('math_user_role');
+    setIsSignedIn(false);
+    setStudentName('');
+    setTeacherKey('');
   };
 
   const updateLeaderboard = (gainedXp) => {
@@ -219,323 +270,111 @@ export default function App() {
     };
 
     let q = {};
+    let qKey = '';
 
-    if (selectedTopic === TOPICS.INTEGER_ADD_SUB) {
-      let a, b, isAdd;
-      if (difficulty === 'easy') {
-        a = rand(1, 15);
-        b = rand(1, 15);
-        isAdd = Math.random() > 0.4;
-      } else if (difficulty === 'medium') {
-        a = rand(-20, 20);
-        b = rand(-20, 20);
-        isAdd = Math.random() > 0.5;
-      } else {
-        a = rand(-60, 60);
-        b = rand(-60, 60);
-        isAdd = Math.random() > 0.5;
-      }
-      
-      let effectiveB = isAdd ? b : -b;
-      const ans = a + effectiveB;
+    do {
+      if (selectedTopic === TOPICS.INTEGER_ADD_SUB) {
+        let a = rand(-40, 40);
+        let b = rand(-40, 40);
+        let isAdd = Math.random() > 0.5;
+        let effectiveB = isAdd ? b : -b;
+        const ans = a + effectiveB;
+        qKey = `${a}_${isAdd ? '+' : '-'}_${b}`;
 
-      const stepsAz = [];
-      const stepsEn = [];
+        const distractors = [
+          (-ans).toString(),
+          (ans + 1).toString(),
+          (ans - 1).toString(),
+          (ans + 2).toString()
+        ].filter(d => d !== ans.toString());
 
-      if (!isAdd) {
-        stepsAz.push(`Çıxma əməli toplama kimi yazılır: ${a} - (${b}) ➔ ${a} + (${-b})`);
-        stepsEn.push(`Convert subtraction to addition: ${a} - (${b}) ➔ ${a} + (${-b})`);
-      }
-
-      const isANegative = a < 0;
-      const isBNegative = effectiveB < 0;
-
-      if ((isANegative && !isBNegative) || (!isANegative && isBNegative)) {
-        const modA = Math.abs(a);
-        const modB = Math.abs(effectiveB);
-        const largerMod = modA > modB ? a : effectiveB;
-        const largerVal = Math.max(modA, modB);
-        const smallerVal = Math.min(modA, modB);
-        const signStr = largerMod < 0 ? 'mənfi (-)' : 'müsbət (+)';
-        const signStrEn = largerMod < 0 ? 'negative (-)' : 'positive (+)';
-
-        stepsAz.push(`📌 Qayda: Misalda 1 mənfi, 1 müsbət var deyə modullarını çıxıb qarşısına modulu böyük olanın işarəsini yazırıq.`);
-        stepsAz.push(`🔍 Vizual Hesablama: |${a}| = ${modA}, |${effectiveB}| = ${modB}. Böyük modul ${largerVal}-dir (işarəsi ${signStr}).`);
-        stepsAz.push(`✏️ Qaydadan gələn cavab: ${largerVal} - ${smallerVal} = ${largerVal - smallerVal} ➔ Cavab: ${ans}`);
-
-        stepsEn.push(`📌 Rule: Since there is 1 negative and 1 positive, subtract their absolute values and write the sign of the larger absolute value.`);
-        stepsEn.push(`🔍 Visual Step: |${a}| = ${modA}, |${effectiveB}| = ${modB}. Larger value is ${largerVal} (sign: ${signStrEn}).`);
-        stepsEn.push(`✏️ Calculation: ${largerVal} - ${smallerVal} = ${largerVal - smallerVal} ➔ Result: ${ans}`);
-      } else {
-        const signWordAz = isANegative ? 'mənfi' : 'müsbət';
-        const signWordEn = isANegative ? 'negative' : 'positive';
-        const signSymbol = isANegative ? '(-)' : '(+)';
-
-        stepsAz.push(`📌 Qayda: Her ikisinin işarəsi eynidir (${signWordAz}) deyə toplayıb qarşısına bu ədədlərin işarəsini yazırıq.`);
-        stepsAz.push(`🔍 Vizual Hesablama: ${Math.abs(a)} + ${Math.abs(effectiveB)} = ${Math.abs(ans)} ➔ İşarə ${signSymbol} ➔ Cavab: ${ans}`);
-
-        stepsEn.push(`📌 Rule: Since both numbers have the same sign (${signWordEn}), add them up and keep their shared sign.`);
-        stepsEn.push(`🔍 Visual Step: ${Math.abs(a)} + ${Math.abs(effectiveB)} = ${Math.abs(ans)} ➔ Shared sign ${signSymbol} ➔ Result: ${ans}`);
-      }
-
-      q = {
-        type: 'text',
-        renderQuestion: () => `${a} ${isAdd ? '+' : '-'} (${b})`,
-        answer: ans.toString(),
-        stepsAz,
-        stepsEn
-      };
-    } else if (selectedTopic === TOPICS.INTEGER_MUL_DIV) {
-      const isMul = Math.random() > 0.5;
-      let a, b, ans;
-      const mult = difficulty === 'hard' ? 20 : difficulty === 'medium' ? 12 : 6;
-      
-      if (isMul) {
-        a = difficulty === 'easy' ? rand(1, 10) : randNonZero(-mult, mult);
-        b = difficulty === 'easy' ? rand(1, 10) : randNonZero(-mult, mult);
-        ans = a * b;
+        q = {
+          type: 'text',
+          renderQuestion: () => `${a} ${isAdd ? '+' : '-'} (${b})`,
+          answer: ans.toString(),
+          distractors,
+          stepsAz: [`Qayda: |${a}| və |${effectiveB}| modul hesabı ➔ Cavab: ${ans}`],
+          stepsEn: [`Rule: Combine absolute values of |${a}| and |${effectiveB}| ➔ Result: ${ans}`]
+        };
+      } else if (selectedTopic === TOPICS.INTEGER_MUL_DIV) {
+        let a = randNonZero(-12, 12);
+        let b = randNonZero(-12, 12);
+        let ans = a * b;
+        qKey = `${a}_x_${b}`;
+        const distractors = [(-ans).toString(), (ans + 2).toString(), (ans - 2).toString()];
         q = {
           type: 'text',
           renderQuestion: () => `${a} × (${b})`,
           answer: ans.toString(),
-          stepsAz: [
-            `1. İşarəni təyin et: ${a < 0 && b < 0 ? 'İki mənfi ➔ Müsbət (+)' : (a < 0 || b < 0 ? 'Bir mənfi, bir müsbət ➔ Mənfi (-)' : 'İki müsbət ➔ Müsbət (+)')}`,
-            `2. Ədədləri bir-birinə vur: |${a}| × |${b}| = ${Math.abs(ans)}`,
-            `Nəticə: ${ans}`
-          ],
-          stepsEn: [
-            `1. Determine sign: ${a < 0 && b < 0 ? 'Two negatives ➔ Positive (+)' : (a < 0 || b < 0 ? 'One negative, one positive ➔ Negative (-)' : 'Two positives ➔ Positive (+)')}`,
-            `2. Multiply numbers: |${a}| × |${b}| = ${Math.abs(ans)}`,
-            `Result: ${ans}`
-          ]
+          distractors,
+          stepsAz: [`|${a}| × |${b}| = ${Math.abs(ans)}. İşarə: ${ans < 0 ? '-' : '+'} ➔ Cavab: ${ans}`],
+          stepsEn: [`|${a}| × |${b}| = ${Math.abs(ans)}. Sign: ${ans < 0 ? '-' : '+'} ➔ Result: ${ans}`]
         };
       } else {
-        b = difficulty === 'easy' ? rand(1, 8) : randNonZero(-mult, mult);
-        ans = difficulty === 'easy' ? rand(1, 10) : randNonZero(-mult, mult);
-        a = b * ans;
-        q = {
-          type: 'text',
-          renderQuestion: () => `${a} ÷ (${b})`,
-          answer: ans.toString(),
-          stepsAz: [
-            `1. İşarəni təyin et: ${a < 0 && b < 0 ? 'İki mənfi ➔ Müsbət (+)' : (a < 0 || b < 0 ? 'Bir mənfi, bir müsbət ➔ Mənfi (-)' : 'İki müsbət ➔ Müsbət (+)')}`,
-            `2. Bölməni yerinə yetir: |${a}| ÷ |${b}| = ${Math.abs(ans)}`,
-            `Nəticə: ${ans}`
-          ],
-          stepsEn: [
-            `1. Determine sign: ${a < 0 && b < 0 ? 'Two negatives ➔ Positive (+)' : (a < 0 || b < 0 ? 'One negative, one positive ➔ Negative (-)' : 'Two positives ➔ Positive (+)')}`,
-            `2. Divide numbers: |${a}| ÷ |${b}| = ${Math.abs(ans)}`,
-            `Result: ${ans}`
-          ]
-        };
-      }
-    } else if (selectedTopic === TOPICS.FRACTION_OPS) {
-      let n1, d1, n2, d2, isAdd;
-      if (difficulty === 'easy') {
-        d1 = rand(3, 8);
-        d2 = d1;
-        n1 = rand(1, d1 - 1);
-        n2 = rand(1, d2 - 1);
-        isAdd = true;
-      } else if (difficulty === 'medium') {
-        d1 = rand(2, 6);
-        d2 = rand(2, 6);
-        n1 = rand(1, 6);
-        n2 = rand(1, 6);
-        isAdd = Math.random() > 0.5;
-      } else {
-        d1 = rand(4, 10);
-        d2 = rand(4, 10);
-        n1 = randNonZero(-8, 8);
-        n2 = randNonZero(-8, 8);
-        isAdd = Math.random() > 0.5;
-      }
-
-      const commonDen = lcm(d1, d2);
-      const m1 = commonDen / d1;
-      const m2 = commonDen / d2;
-      const rawNum = isAdd ? (n1 * m1 + n2 * m2) : (n1 * m1 - n2 * m2);
-      const simp = simplifyFraction(rawNum, commonDen);
-
-      const stepsAz = [];
-      const stepsEn = [];
-
-      if (d1 === d2) {
-        stepsAz.push(`Məxrəclər eynidir (${d1}), məxrəc olduğu kimi qalır.`);
-        stepsAz.push(`Sürətlər ${isAdd ? 'toplanır' : 'çıxılır'}: ${n1} ${isAdd ? '+' : '-'} ${n2} = ${rawNum}.`);
-        if (simp.num !== rawNum || simp.den !== commonDen) {
-          stepsAz.push(`Kəsr ixtisar olunur: ${rawNum}/${commonDen} ➔ ${simp.den === 1 ? simp.num : `${simp.num}/${simp.den}`}`);
-        }
-        stepsAz.push(`Nəticə: ${simp.den === 1 ? simp.num : `${simp.num}/${simp.den}`}`);
-
-        stepsEn.push(`The denominators are equal (${d1}), denominator stays the same.`);
-        stepsEn.push(`Numerators are ${isAdd ? 'added' : 'subtracted'}: ${n1} ${isAdd ? '+' : '-'} ${n2} = ${rawNum}.`);
-        if (simp.num !== rawNum || simp.den !== commonDen) {
-          stepsEn.push(`Simplify fraction: ${rawNum}/${commonDen} ➔ ${simp.den === 1 ? simp.num : `${simp.num}/${simp.den}`}`);
-        }
-        stepsEn.push(`Result: ${simp.den === 1 ? simp.num : `${simp.num}/${simp.den}`}`);
-      } else {
-        stepsAz.push(`1. ƏKOB tapılır: ƏKOB(${d1}, ${d2}) = ${commonDen}.`);
-        stepsAz.push(`2. Vuruqlar: I kəsr ×${m1}, II kəsr ×${m2}.`);
-        stepsAz.push(`3. Sürətlər: (${n1}×${m1}) ${isAdd ? '+' : '-'} (${n2}×${m2}) = ${rawNum}.`);
-        stepsAz.push(`4. İxtisar: ${rawNum}/${commonDen} ➔ ${simp.den === 1 ? simp.num : `${simp.num}/${simp.den}`}`);
-
-        stepsEn.push(`1. Find LCD: LCD(${d1}, ${d2}) = ${commonDen}.`);
-        stepsEn.push(`2. Multipliers: 1st ×${m1}, 2nd ×${m2}.`);
-        stepsEn.push(`3. Numerators: (${n1}×${m1}) ${isAdd ? '+' : '-'} (${n2}×${m2}) = ${rawNum}.`);
-        stepsEn.push(`4. Simplify: ${rawNum}/${commonDen} ➔ ${simp.den === 1 ? simp.num : `${simp.num}/${simp.den}`}`);
-      }
-
-      q = {
-        type: 'fraction',
-        renderQuestion: () => (
-          <span style={{ display: 'inline-flex', alignItems: 'center' }}>
-            <FractionDisplay num={n1} den={d1} /> {isAdd ? '+' : '-'} <FractionDisplay num={n2} den={d2} />
-          </span>
-        ),
-        answerObj: simp,
-        answerStr: simp.den === 1 ? `${simp.num}` : `${simp.num}/${simp.den}`,
-        answerRender: () => simp.den === 1 ? <span>{simp.num}</span> : <FractionDisplay num={simp.num} den={simp.den} />,
-        stepsAz,
-        stepsEn
-      };
-    } else if (selectedTopic === TOPICS.FACTORING) {
-      const factor = rand(2, difficulty === 'hard' ? 9 : 4);
-      const a = rand(1, 5);
-      const b = rand(1, 6);
-      const sign = Math.random() > 0.5 ? '+' : '-';
-      const ans = `${factor}(${a === 1 ? '' : a}x ${sign} ${b})`;
-      q = {
-        type: 'text',
-        renderQuestion: () => `${factor * a}x ${sign} ${factor * b}`,
-        answer: ans,
-        stepsAz: [
-          `1. Ortaya çıxan ƏBOB: ƏBOB(${factor * a}, ${factor * b}) = ${factor}.`,
-          `2. ${factor} mötərizə xaricinə yazılır.`,
-          `Nəticə: ${ans}`
-        ],
-        stepsEn: [
-          `1. Find GCF: GCF(${factor * a}, ${factor * b}) = ${factor}.`,
-          `2. Write ${factor} outside parenthesis.`,
-          `Result: ${ans}`
-        ]
-      };
-    } else if (selectedTopic === TOPICS.EXPAND_BRACKETS) {
-      const a = rand(1, 7);
-      const b = rand(1, 9);
-      const sign = Math.random() > 0.5 ? '+' : '-';
-      const ans = sign === '+' ? `-${a}x - ${b}` : `-${a}x + ${b}`;
-      q = {
-        type: 'text',
-        renderQuestion: () => `-(${a}x ${sign} ${b})`,
-        answer: ans,
-        stepsAz: [
-          `1. Mötərizə qarşısındakı mənfi (-) içəridəki HƏR İŞARƏNİ dəyişir.`,
-          `Nəticə: ${ans}`
-        ],
-        stepsEn: [
-          `1. Negative (-) in front flips EVERY sign inside.`,
-          `Result: ${ans}`
-        ]
-      };
-    } else if (selectedTopic === TOPICS.ALGEBRAIC_IDENTITIES) {
-      const a = rand(1, 6);
-      const isSquare = Math.random() > 0.5;
-      if (isSquare) {
-        const ans = `x² + ${2*a}x + ${a*a}`;
-        q = {
-          type: 'text',
-          renderQuestion: () => `(x + ${a})²`,
-          answer: ans,
-          stepsAz: [
-            `Düstur: (A + B)² = A² + 2AB + B²`,
-            `Tətbiq: x² + 2·x·${a} + ${a}² = ${ans}`
-          ],
-          stepsEn: [
-            `Formula: (A + B)² = A² + 2AB + B²`,
-            `Apply: x² + 2·x·${a} + ${a}² = ${ans}`
-          ]
-        };
-      } else {
-        const ans = `(x - ${a})(x + ${a})`;
+        let a = rand(1, 9);
+        let ans = `(x - ${a})(x + ${a})`;
+        qKey = `id_${a}`;
         q = {
           type: 'text',
           renderQuestion: () => `x² - ${a*a}`,
           answer: ans,
-          stepsAz: [
-            `Düstur: A² - B² = (A - B)(A + B)`,
-            `Tətbiq: x² - ${a}² ➔ (x - ${a})(x + ${a})`
-          ],
-          stepsEn: [
-            `Formula: A² - B² = (A - B)(A + B)`,
-            `Apply: x² - ${a}² ➔ (x - ${a})(x + ${a})`
-          ]
+          distractors: [`(x - ${a})(x - ${a})`, `(x + ${a})(x + ${a})`],
+          stepsAz: [`A² - B² = (A - B)(A + B) ➔ (x - ${a})(x + ${a})`],
+          stepsEn: [`A² - B² = (A - B)(A + B) ➔ (x - ${a})(x + ${a})`]
         };
       }
-    }
+    } while (qKey === lastQuestionKey);
 
-    const options = [];
-    const correctAnsStr = q.type === 'fraction' ? q.answerStr : q.answer;
-    
-    options.push({
-      str: correctAnsStr,
-      render: q.type === 'fraction' ? q.answerRender : () => <span>{q.answer}</span>
+    setLastQuestionKey(qKey);
+
+    const options = [{ str: q.answer, render: () => <span>{q.answer}</span> }];
+    q.distractors.forEach(d => {
+      if (options.length < 4 && !options.some(o => o.str === d)) {
+        options.push({ str: d, render: () => <span>{d}</span> });
+      }
     });
 
     while (options.length < 4) {
-      let fakeStr = '';
-      let fakeRender = null;
-
-      if (q.type === 'fraction') {
-        const fakeN = q.answerObj.num + randNonZero(-3, 3);
-        const fakeD = Math.max(2, q.answerObj.den + rand(-2, 2));
-        const simpF = simplifyFraction(fakeN, fakeD);
-        fakeStr = simpF.den === 1 ? `${simpF.num}` : `${simpF.num}/${simpF.den}`;
-        fakeRender = () => simpF.den === 1 ? <span>{simpF.num}</span> : <FractionDisplay num={simpF.num} den={simpF.den} />;
-      } else {
-        const numAns = parseInt(q.answer);
-        if (!isNaN(numAns)) {
-          fakeStr = (numAns + randNonZero(-5, 5)).toString();
-        } else {
-          fakeStr = `-${rand(1, 5)}x + ${rand(1, 9)}`;
-        }
-        fakeRender = () => <span>{fakeStr}</span>;
-      }
-
-      if (!options.some(opt => opt.str === fakeStr)) {
-        options.push({ str: fakeStr, render: fakeRender });
-      }
+      const fake = `-${rand(1, 9)}x + ${rand(1, 9)}`;
+      if (!options.some(o => o.str === fake)) options.push({ str: fake, render: () => <span>{fake}</span> });
     }
-    q.options = options.sort(() => Math.random() - 0.5);
 
+    q.options = options.sort(() => Math.random() - 0.5);
     setCurrentQuestion(q);
   };
 
   useEffect(() => {
-    generateQuestion();
-  }, [selectedTopic, difficulty]);
+    if (isSignedIn) generateQuestion();
+  }, [selectedTopic, difficulty, isSignedIn]);
 
-  const handleCheckAnswer = (selectedVal = null) => {
-    const valToCheck = selectedVal !== null ? selectedVal : userAnswer.trim();
-    if (!valToCheck) return;
+  const handleCheckAnswer = (selectedVal) => {
+    if (!selectedVal) return;
 
-    const newAttempts = attempts + 1;
-    setAttempts(newAttempts);
+    const currentAttempts = attempts;
+    setAttempts(prev => prev + 1);
 
-    const targetAnswer = currentQuestion.type === 'fraction' ? currentQuestion.answerStr : currentQuestion.answer;
-    const isCorrect = valToCheck.replaceAll(' ', '') === targetAnswer.replaceAll(' ', '');
+    const targetAnswer = currentQuestion.answer;
+    const isCorrect = selectedVal.replaceAll(' ', '') === targetAnswer.replaceAll(' ', '');
 
     if (isCorrect) {
       confetti({ particleCount: 70, spread: 70, origin: { y: 0.6 } });
-      const gainedXp = difficulty === 'hard' ? 30 : difficulty === 'medium' ? 20 : 10;
+      
+      let gainedXp = difficulty === 'easy' ? (currentAttempts === 0 ? 5 : currentAttempts === 1 ? 4 : 3) 
+                   : difficulty === 'medium' ? (currentAttempts === 0 ? 10 : currentAttempts === 1 ? 8 : 6)
+                   : (currentAttempts === 0 ? 15 : currentAttempts === 1 ? 12 : 9);
+
       setScore(prev => prev + gainedXp);
-      setStreak(prev => prev + 1);
-      setFeedback({ isCorrect: true, msg: lang === 'az' ? 'ƏLA! DÜZGÜN CAVAB! 🎉' : 'GREAT! CORRECT ANSWER! 🎉' });
-      setShowDetailedExplanation(true);
+      setStreak(prev => (currentAttempts === 0 ? prev + 1 : prev));
+      setFeedback({ 
+        isCorrect: true, 
+        msg: lang === 'az' ? `ƏLA! DÜZGÜN CAVAB! 🎉 (+${gainedXp} XP)` : `GREAT! CORRECT ANSWER! 🎉 (+${gainedXp} XP)` 
+      });
+      setShowDetailedExplanation(false);
       updateLeaderboard(gainedXp);
     } else {
+      // RESET STREAK ON WRONG ATTEMPT
       setStreak(0);
-      setFeedback({ isCorrect: false, msg: lang === 'az' ? 'YENİDƏN SINAYIN! 💪' : 'TRY AGAIN! 💪' });
+      setFeedback({ isCorrect: false, msg: t.streakResetMsg });
     }
   };
 
@@ -545,47 +384,80 @@ export default function App() {
   const inkColor = '#3d2b1f';
   const borderStyle = '3px solid #6b4c35';
 
-  if (!isProfileSaved) {
+  // SIGN IN MODAL
+  if (!isSignedIn) {
     return (
       <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: paperBg, padding: '20px', fontFamily: '"Courier New", Courier, monospace' }}>
-        <div style={{ background: cardBg, borderRadius: '24px', padding: '40px', maxWidth: '450px', width: '100%', border: borderStyle, boxShadow: '8px 8px 0px #6b4c35', textAlign: 'center' }}>
+        <div style={{ background: cardBg, borderRadius: '24px', padding: '36px', maxWidth: '450px', width: '100%', border: borderStyle, boxShadow: '8px 8px 0px #6b4c35', textAlign: 'center' }}>
           <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '10px' }}>
             <button onClick={() => setLang(lang === 'az' ? 'en' : 'az')} style={{ background: innerBg, border: '2px solid #6b4c35', padding: '6px 12px', borderRadius: '10px', fontWeight: '800', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}>
               <Globe size={16} /> {lang.toUpperCase()}
             </button>
           </div>
-          <div style={{ width: '80px', height: '80px', background: '#8c5a3c', color: '#fff', borderRadius: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px', border: '3px solid #3d2b1f' }}>
-            <GraduationCap size={40} />
+          
+          <div style={{ width: '70px', height: '70px', background: '#8c5a3c', color: '#fff', borderRadius: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px', border: '3px solid #3d2b1f' }}>
+            <GraduationCap size={36} />
           </div>
-          <h1 style={{ fontSize: '28px', fontWeight: '900', color: inkColor, marginBottom: '10px' }}>{t.welcome}</h1>
-          <p style={{ color: '#5a4231', fontSize: '16px', marginBottom: '30px' }}>{t.enterDetails}</p>
-          <form onSubmit={saveProfile} style={{ display: 'flex', flexDirection: 'column', gap: '20px', textAlign: 'left' }}>
-            <div>
-              <label style={{ fontSize: '14px', fontWeight: '800', color: inkColor, display: 'block', marginBottom: '8px' }}>{t.nameLabel}</label>
-              <input
-                type="text"
-                required
-                placeholder="Əli Məmmədov"
-                value={studentName}
-                onChange={(e) => setStudentName(e.target.value)}
-                style={{ width: '100%', padding: '16px', borderRadius: '14px', border: '2px solid #6b4c35', fontSize: '18px', boxSizing: 'border-box', background: innerBg, color: inkColor }}
-              />
-            </div>
-            <div>
-              <label style={{ fontSize: '14px', fontWeight: '800', color: inkColor, display: 'block', marginBottom: '8px' }}>{t.gradeLabel}</label>
-              <select
-                value={studentGrade}
-                onChange={(e) => setStudentGrade(e.target.value)}
-                style={{ width: '100%', padding: '16px', borderRadius: '14px', border: '2px solid #6b4c35', fontSize: '18px', boxSizing: 'border-box', background: innerBg, color: inkColor }}
-              >
-                <option value="5">5 {t.gradeSuffix}</option>
-                <option value="6">6 {t.gradeSuffix}</option>
-                <option value="7">7 {t.gradeSuffix}</option>
-                <option value="8">8 {t.gradeSuffix}</option>
-                <option value="9">9 {t.gradeSuffix}</option>
-              </select>
-            </div>
-            <button type="submit" style={{ width: '100%', padding: '18px', background: '#8c5a3c', color: '#fff', fontSize: '18px', fontWeight: '900', border: '3px solid #3d2b1f', borderRadius: '14px', cursor: 'pointer', marginTop: '10px', boxShadow: '4px 4px 0px #3d2b1f' }}>
+          <h1 style={{ fontSize: '26px', fontWeight: '900', color: inkColor, marginBottom: '8px' }}>{t.welcome}</h1>
+          <p style={{ color: '#5a4231', fontSize: '15px', marginBottom: '24px' }}>{t.enterDetails}</p>
+
+          {/* ROLE SELECTOR */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '24px' }}>
+            <button
+              onClick={() => setUserRole('student')}
+              style={{ padding: '12px', borderRadius: '12px', border: '2px solid #6b4c35', background: userRole === 'student' ? '#8c5a3c' : innerBg, color: userRole === 'student' ? '#fff' : inkColor, fontWeight: '900', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
+            >
+              <UserCheck size={18} /> {t.roleStudent}
+            </button>
+            <button
+              onClick={() => setUserRole('teacher')}
+              style={{ padding: '12px', borderRadius: '12px', border: '2px solid #6b4c35', background: userRole === 'teacher' ? '#8c5a3c' : innerBg, color: userRole === 'teacher' ? '#fff' : inkColor, fontWeight: '900', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
+            >
+              <Key size={18} /> {t.roleTeacher}
+            </button>
+          </div>
+
+          <form onSubmit={handleSignIn} style={{ display: 'flex', flexDirection: 'column', gap: '18px', textAlign: 'left' }}>
+            {userRole === 'student' ? (
+              <>
+                <div>
+                  <label style={{ fontSize: '13px', fontWeight: '800', color: inkColor, display: 'block', marginBottom: '6px' }}>{t.nameLabel}</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="Əli Məmmədov"
+                    value={studentName}
+                    onChange={(e) => setStudentName(e.target.value)}
+                    style={{ width: '100%', padding: '14px', borderRadius: '12px', border: '2px solid #6b4c35', fontSize: '16px', boxSizing: 'border-box', background: innerBg, color: inkColor }}
+                  />
+                </div>
+                <div>
+                  <label style={{ fontSize: '13px', fontWeight: '800', color: inkColor, display: 'block', marginBottom: '6px' }}>{t.gradeLabel}</label>
+                  <select
+                    value={studentGrade}
+                    onChange={(e) => setStudentGrade(e.target.value)}
+                    style={{ width: '100%', padding: '14px', borderRadius: '12px', border: '2px solid #6b4c35', fontSize: '16px', boxSizing: 'border-box', background: innerBg, color: inkColor }}
+                  >
+                    <option value="5">5 {t.gradeSuffix}</option>
+                    <option value="6">6 {t.gradeSuffix}</option>
+                  </select>
+                </div>
+              </>
+            ) : (
+              <div>
+                <label style={{ fontSize: '13px', fontWeight: '800', color: inkColor, display: 'block', marginBottom: '6px' }}>{t.teacherKeyLabel}</label>
+                <input
+                  type="text"
+                  required
+                  placeholder={t.teacherKeyPlaceholder}
+                  value={teacherKey}
+                  onChange={(e) => setTeacherKey(e.target.value)}
+                  style={{ width: '100%', padding: '14px', borderRadius: '12px', border: '2px solid #6b4c35', fontSize: '16px', boxSizing: 'border-box', background: innerBg, color: inkColor }}
+                />
+              </div>
+            )}
+
+            <button type="submit" style={{ width: '100%', padding: '16px', background: '#8c5a3c', color: '#fff', fontSize: '16px', fontWeight: '900', border: '3px solid #3d2b1f', borderRadius: '14px', cursor: 'pointer', marginTop: '10px', boxShadow: '4px 4px 0px #3d2b1f' }}>
               {t.startBtn}
             </button>
           </form>
@@ -594,8 +466,6 @@ export default function App() {
     );
   }
 
-  const stepsToRender = currentQuestion ? (lang === 'az' ? currentQuestion.stepsAz : currentQuestion.stepsEn) : [];
-
   return (
     <div style={{ minHeight: '100vh', background: paperBg, padding: '24px 16px', color: inkColor, fontFamily: '"Courier New", Courier, monospace' }}>
       <div style={{ maxWidth: '1100px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '24px' }}>
@@ -603,156 +473,191 @@ export default function App() {
         {/* HEADER */}
         <header style={{ background: cardBg, padding: '20px 28px', borderRadius: '24px', border: borderStyle, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px', boxShadow: '6px 6px 0px #6b4c35' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-            <div style={{ background: '#8c5a3c', color: '#fff', padding: '14px', borderRadius: '16px', border: '2px solid #3d2b1f' }}>
-              <Brain size={32} />
+            <div style={{ background: '#8c5a3c', color: '#fff', padding: '12px', borderRadius: '16px', border: '2px solid #3d2b1f' }}>
+              <Brain size={30} />
             </div>
             <div>
-              <h1 style={{ margin: 0, fontSize: '24px', fontWeight: '900', color: inkColor }}>{t.title}</h1>
-              <p style={{ margin: '4px 0 0', fontSize: '15px', fontWeight: '800', color: '#8c5a3c' }}>
-                {t.student}: {studentName} ({studentGrade} {t.gradeSuffix})
+              <h1 style={{ margin: 0, fontSize: '22px', fontWeight: '900', color: inkColor }}>{t.title}</h1>
+              <p style={{ margin: '4px 0 0', fontSize: '14px', fontWeight: '800', color: '#8c5a3c' }}>
+                {userRole === 'teacher' ? `${t.teacher}: ${teacherKey}` : `${t.student}: ${studentName} (${studentGrade} ${t.gradeSuffix})`}
               </p>
             </div>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-            <button onClick={() => setLang(lang === 'az' ? 'en' : 'az')} style={{ background: innerBg, border: '2px solid #6b4c35', padding: '8px 14px', borderRadius: '12px', fontWeight: '900', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', color: inkColor }}>
-              <Globe size={18} /> {lang.toUpperCase()}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <button onClick={() => setActiveTab('practice')} style={{ padding: '8px 14px', borderRadius: '12px', border: '2px solid #6b4c35', background: activeTab === 'practice' ? '#8c5a3c' : innerBg, color: activeTab === 'practice' ? '#fff' : inkColor, fontWeight: '900', cursor: 'pointer' }}>
+              {t.practice}
             </button>
-            <div style={{ display: 'flex', gap: '10px' }}>
-              <div style={{ background: innerBg, border: '2px solid #6b4c35', padding: '8px 14px', borderRadius: '14px', display: 'flex', alignItems: 'center', gap: '6px', fontWeight: '900', color: '#b45309', fontSize: '15px' }}>
-                <Zap size={18} color="#b45309" fill="#b45309" /> {score} XP
-              </div>
-              <div style={{ background: innerBg, border: '2px solid #6b4c35', padding: '8px 14px', borderRadius: '14px', display: 'flex', alignItems: 'center', gap: '6px', fontWeight: '900', color: '#c2410c', fontSize: '15px' }}>
-                <Flame size={18} color="#c2410c" fill="#c2410c" /> {streak}
-              </div>
-            </div>
+            <button onClick={() => setActiveTab('leaderboard')} style={{ padding: '8px 14px', borderRadius: '12px', border: '2px solid #6b4c35', background: activeTab === 'leaderboard' ? '#8c5a3c' : innerBg, color: activeTab === 'leaderboard' ? '#fff' : inkColor, fontWeight: '900', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <Trophy size={16} /> Top 10
+            </button>
+            {userRole === 'teacher' && (
+              <button onClick={() => setActiveTab('teacher_space')} style={{ padding: '8px 14px', borderRadius: '12px', border: '2px solid #6b4c35', background: activeTab === 'teacher_space' ? '#8c5a3c' : innerBg, color: activeTab === 'teacher_space' ? '#fff' : inkColor, fontWeight: '900', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <School size={16} /> Space
+              </button>
+            )}
+            <button onClick={handleSignOut} style={{ background: '#ef4444', color: '#fff', border: '2px solid #991b1b', padding: '8px 14px', borderRadius: '12px', fontWeight: '900', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <LogOut size={16} /> {t.signOutBtn}
+            </button>
           </div>
         </header>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '24px' }}>
-          
-          {/* SOL PANEL */}
-          <div style={{ background: cardBg, padding: '24px', borderRadius: '24px', border: borderStyle, display: 'flex', flexDirection: 'column', gap: '24px', boxShadow: '6px 6px 0px #6b4c35' }}>
-            <div>
-              <label style={{ fontSize: '13px', fontWeight: '900', color: '#5a4231', display: 'block', marginBottom: '12px' }}>{t.selectTopic}</label>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                {Object.entries(t.topics).map(([key, label]) => (
-                  <button
-                    key={key}
-                    onClick={() => setSelectedTopic(key)}
-                    style={{ textAlign: 'left', padding: '14px 16px', borderRadius: '14px', border: '2px solid #6b4c35', background: selectedTopic === key ? '#8c5a3c' : innerBg, color: selectedTopic === key ? '#fff' : inkColor, fontWeight: '800', fontSize: '15px', cursor: 'pointer' }}
-                  >
-                    {label}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div>
-              <label style={{ fontSize: '13px', fontWeight: '900', color: '#5a4231', display: 'block', marginBottom: '12px' }}>{t.selectDiff}</label>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px' }}>
-                {Object.entries(t.diffs).map(([id, label]) => (
-                  <button
-                    key={id}
-                    onClick={() => setDifficulty(id)}
-                    style={{ padding: '12px', borderRadius: '14px', border: '2px solid #6b4c35', background: difficulty === id ? '#d97706' : innerBg, color: difficulty === id ? '#fff' : inkColor, fontWeight: '900', fontSize: '14px', cursor: 'pointer' }}
-                  >
-                    {label}
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          {/* SAĞ PANEL */}
-          <div style={{ gridColumn: 'span 2', background: cardBg, padding: '36px', borderRadius: '24px', border: borderStyle, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: '32px', boxShadow: '6px 6px 0px #6b4c35' }}>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ background: innerBg, color: inkColor, padding: '8px 16px', borderRadius: '12px', fontWeight: '900', fontSize: '14px', border: '2px solid #6b4c35' }}>
-                  {t.topics[selectedTopic]}
-                </span>
-                <span style={{ fontWeight: '800', fontSize: '15px', color: inkColor }}>{t.timer} <strong style={{ color: '#b45309', fontSize: '20px' }}>{questionTimer} {t.sec}</strong></span>
-              </div>
-
-              {currentQuestion && (
-                <div style={{ textAlign: 'center', padding: '40px 20px', background: innerBg, borderRadius: '24px', border: '3px dashed #6b4c35' }}>
-                  <p style={{ margin: '0 0 12px', fontSize: '14px', fontWeight: '900', color: '#8c5a3c', letterSpacing: '1px' }}>{t.solvePrompt}</p>
-                  <div style={{ fontSize: '38px', fontWeight: '900', color: inkColor, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-                    {typeof currentQuestion.renderQuestion === 'function' ? currentQuestion.renderQuestion() : currentQuestion.renderQuestion} = ?
-                  </div>
-                </div>
-              )}
-
-              {/* OPTIONS / INPUT */}
-              {currentQuestion?.options && (
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-                  {currentQuestion.options.map((opt, idx) => (
+        {/* TAB CONTENTS */}
+        {activeTab === 'practice' && (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '24px' }}>
+            {/* SOL PANEL */}
+            <div style={{ background: cardBg, padding: '24px', borderRadius: '24px', border: borderStyle, display: 'flex', flexDirection: 'column', gap: '24px', boxShadow: '6px 6px 0px #6b4c35' }}>
+              <div>
+                <label style={{ fontSize: '13px', fontWeight: '900', color: '#5a4231', display: 'block', marginBottom: '12px' }}>{t.selectTopic}</label>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  {Object.entries(t.topics).map(([key, label]) => (
                     <button
-                      key={idx}
-                      disabled={feedback?.isCorrect}
-                      onClick={() => { setMcqSelection(opt.str); handleCheckAnswer(opt.str); }}
-                      style={{ padding: '20px', borderRadius: '16px', border: '3px solid #6b4c35', background: mcqSelection === opt.str ? (feedback?.isCorrect ? '#a7f3d0' : '#fecaca') : innerBg, color: inkColor, fontSize: '22px', fontWeight: '900', cursor: 'pointer', boxShadow: '3px 3px 0px #6b4c35', display: 'flex', justifyContent: 'center', alignItems: 'center' }}
+                      key={key}
+                      onClick={() => setSelectedTopic(key)}
+                      style={{ textAlign: 'left', padding: '14px 16px', borderRadius: '14px', border: '2px solid #6b4c35', background: selectedTopic === key ? '#8c5a3c' : innerBg, color: selectedTopic === key ? '#fff' : inkColor, fontWeight: '800', fontSize: '15px', cursor: 'pointer' }}
                     >
-                      {opt.render()}
+                      {label}
                     </button>
                   ))}
                 </div>
-              )}
+              </div>
 
-              {/* CAVAB VƏ İDARƏETMƏ PANELİ */}
-              {feedback && (
-                <div style={{ padding: '24px', borderRadius: '16px', border: '3px solid #6b4c35', background: feedback.isCorrect ? '#d1fae5' : '#fee2e2', color: feedback.isCorrect ? '#065f46' : '#991b1b' }}>
-                  <p style={{ margin: 0, fontSize: '20px', fontWeight: '900' }}>{feedback.msg}</p>
-                  
-                  {!feedback.isCorrect && (
-                    <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginTop: '16px' }}>
-                      <button
-                        onClick={() => setShowDetailedExplanation(true)}
-                        style={{ padding: '10px 16px', background: '#d97706', color: '#fff', border: '2px solid #78350f', borderRadius: '12px', fontWeight: '900', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}
-                      >
-                        <Eye size={16} /> {t.showSolutionBtn}
-                      </button>
-                      <button
-                        onClick={() => { setFeedback(null); setMcqSelection(null); setShowDetailedExplanation(false); }}
-                        style={{ padding: '10px 16px', background: '#0284c7', color: '#fff', border: '2px solid #075985', borderRadius: '12px', fontWeight: '900', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}
-                      >
-                        <RefreshCw size={16} /> {t.retryBtn}
-                      </button>
-                    </div>
-                  )}
-
-                  {/* İZAH PANELİ */}
-                  {(showDetailedExplanation || feedback.isCorrect) && stepsToRender.length > 0 && (
-                    <div style={{ marginTop: '20px', padding: '16px', background: innerBg, borderRadius: '14px', border: '2px solid #6b4c35', color: inkColor }}>
-                      <h4 style={{ margin: '0 0 10px 0', fontSize: '15px', fontWeight: '900', color: '#8c5a3c', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <BookOpen size={18} /> {t.solutionTitle}
-                      </h4>
-                      <ol style={{ margin: 0, paddingLeft: '20px', fontSize: '15px', fontWeight: '800', lineHeight: '1.7' }}>
-                        {stepsToRender.map((step, sIdx) => (
-                          <li key={sIdx}>{step}</li>
-                        ))}
-                      </ol>
-                      <div style={{ marginTop: '12px', padding: '8px 12px', background: '#fef3c7', borderRadius: '8px', border: '1px solid #f59e0b', fontSize: '14px', fontWeight: '900', color: '#92400e', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                        🎯 {t.correctAnsLabel} {currentQuestion.type === 'fraction' ? currentQuestion.answerRender() : currentQuestion.answer}
-                      </div>
-                    </div>
-                  )}
-
+              <div>
+                <label style={{ fontSize: '13px', fontWeight: '900', color: '#5a4231', display: 'block', marginBottom: '12px' }}>{t.selectDiff}</label>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px' }}>
+                  {Object.entries(t.diffs).map(([id, label]) => (
+                    <button
+                      key={id}
+                      onClick={() => setDifficulty(id)}
+                      style={{ padding: '12px', borderRadius: '14px', border: '2px solid #6b4c35', background: difficulty === id ? '#d97706' : innerBg, color: difficulty === id ? '#fff' : inkColor, fontWeight: '900', fontSize: '14px', cursor: 'pointer' }}
+                    >
+                      {label}
+                    </button>
+                  ))}
                 </div>
-              )}
+              </div>
             </div>
 
-            <div style={{ borderTop: '2px solid #6b4c35', paddingTop: '20px', display: 'flex', justifyContent: 'flex-end' }}>
-              <button
-                onClick={generateQuestion}
-                style={{ padding: '16px 32px', background: '#3d2b1f', color: '#fff', border: 'none', borderRadius: '16px', fontWeight: '900', fontSize: '16px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '10px', boxShadow: '4px 4px 0px #6b4c35' }}
-              >
-                {t.nextBtn} <RotateCcw size={18} />
-              </button>
+            {/* SAĞ PANEL */}
+            <div style={{ gridColumn: 'span 2', background: cardBg, padding: '36px', borderRadius: '24px', border: borderStyle, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: '32px', boxShadow: '6px 6px 0px #6b4c35' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ background: innerBg, color: inkColor, padding: '8px 16px', borderRadius: '12px', fontWeight: '900', fontSize: '14px', border: '2px solid #6b4c35' }}>
+                    {t.topics[selectedTopic]}
+                  </span>
+                  <div style={{ display: 'flex', gap: '10px' }}>
+                    <span style={{ background: innerBg, border: '2px solid #6b4c35', padding: '6px 12px', borderRadius: '10px', fontWeight: '900', color: '#b45309' }}><Zap size={16} /> {score} XP</span>
+                    <span style={{ background: innerBg, border: '2px solid #6b4c35', padding: '6px 12px', borderRadius: '10px', fontWeight: '900', color: '#c2410c' }}><Flame size={16} /> {streak}</span>
+                  </div>
+                </div>
+
+                {currentQuestion && (
+                  <div style={{ textAlign: 'center', padding: '40px 20px', background: innerBg, borderRadius: '24px', border: '3px dashed #6b4c35' }}>
+                    <p style={{ margin: '0 0 12px', fontSize: '14px', fontWeight: '900', color: '#8c5a3c' }}>{t.solvePrompt}</p>
+                    <div style={{ fontSize: '38px', fontWeight: '900', color: inkColor }}>
+                      {currentQuestion.renderQuestion()} = ?
+                    </div>
+                  </div>
+                )}
+
+                {/* OPTIONS */}
+                {currentQuestion?.options && (
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                    {currentQuestion.options.map((opt, idx) => (
+                      <button
+                        key={idx}
+                        disabled={feedback?.isCorrect}
+                        onClick={() => handleCheckAnswer(opt.str)}
+                        style={{ padding: '20px', borderRadius: '16px', border: '3px solid #6b4c35', background: mcqSelection === opt.str ? (feedback?.isCorrect ? '#a7f3d0' : '#fecaca') : innerBg, color: inkColor, fontSize: '20px', fontWeight: '900', cursor: 'pointer', boxShadow: '3px 3px 0px #6b4c35' }}
+                      >
+                        {opt.render()}
+                      </button>
+                    ))}
+                  </div>
+                )}
+
+                {/* FEEDBACK & SOLUTION */}
+                {feedback && (
+                  <div style={{ padding: '20px', borderRadius: '16px', border: '3px solid #6b4c35', background: feedback.isCorrect ? '#d1fae5' : '#fee2e2', color: feedback.isCorrect ? '#065f46' : '#991b1b' }}>
+                    <p style={{ margin: 0, fontSize: '18px', fontWeight: '900' }}>{feedback.msg}</p>
+                    <div style={{ display: 'flex', gap: '10px', marginTop: '14px' }}>
+                      {!showDetailedExplanation && (
+                        <button onClick={() => setShowDetailedExplanation(true)} style={{ padding: '8px 14px', background: '#d97706', color: '#fff', border: '2px solid #78350f', borderRadius: '10px', fontWeight: '900', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <Eye size={16} /> {t.showSolutionBtn}
+                        </button>
+                      )}
+                    </div>
+                    {showDetailedExplanation && (
+                      <div style={{ marginTop: '16px', padding: '14px', background: innerBg, borderRadius: '12px', border: '2px solid #6b4c35', color: inkColor }}>
+                        <h4 style={{ margin: '0 0 8px 0', fontSize: '14px', fontWeight: '900', color: '#8c5a3c' }}>{t.solutionTitle}</h4>
+                        <ul style={{ margin: 0, paddingLeft: '20px', fontSize: '14px', fontWeight: '800' }}>
+                          {currentQuestion.stepsAz.map((step, sIdx) => <li key={sIdx}>{step}</li>)}
+                        </ul>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              <div style={{ borderTop: '2px solid #6b4c35', paddingTop: '20px', display: 'flex', justifyContent: 'flex-end' }}>
+                <button onClick={generateQuestion} style={{ padding: '14px 28px', background: '#3d2b1f', color: '#fff', border: 'none', borderRadius: '14px', fontWeight: '900', fontSize: '16px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '10px', boxShadow: '4px 4px 0px #6b4c35' }}>
+                  {t.nextBtn} <RotateCcw size={18} />
+                </button>
+              </div>
             </div>
           </div>
+        )}
 
-        </div>
+        {/* LEADERBOARD TAB */}
+        {activeTab === 'leaderboard' && (
+          <div style={{ background: cardBg, padding: '32px', borderRadius: '24px', border: borderStyle, boxShadow: '6px 6px 0px #6b4c35' }}>
+            <h2 style={{ margin: '0 0 20px', fontSize: '24px', fontWeight: '900', color: inkColor, display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <Trophy color="#d97706" /> {t.leaderboardTitle}
+            </h2>
+            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+              <thead>
+                <tr style={{ borderBottom: '3px solid #6b4c35', background: innerBg }}>
+                  <th style={{ padding: '14px' }}>#</th>
+                  <th style={{ padding: '14px' }}>{t.nameLabel}</th>
+                  <th style={{ padding: '14px' }}>{t.gradeLabel}</th>
+                  <th style={{ padding: '14px' }}>{t.xp}</th>
+                  <th style={{ padding: '14px' }}>{t.solved}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {leaderboard.length === 0 ? (
+                  <tr><td colSpan="5" style={{ padding: '20px', textAlign: 'center' }}>Hələ ki göstərici yoxdur.</td></tr>
+                ) : (
+                  leaderboard.map((item, idx) => (
+                    <tr key={item.id} style={{ borderBottom: '1px solid #6b4c35', background: idx === 0 ? '#fef08a' : 'transparent' }}>
+                      <td style={{ padding: '14px', fontWeight: '900' }}>{idx + 1}</td>
+                      <td style={{ padding: '14px', fontWeight: '900' }}>{item.name}</td>
+                      <td style={{ padding: '14px' }}>{item.grade} {t.gradeSuffix}</td>
+                      <td style={{ padding: '14px', fontWeight: '900', color: '#b45309' }}>{item.xp} XP</td>
+                      <td style={{ padding: '14px' }}>{item.totalSolved} misal</td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        {/* TEACHER SPACE TAB */}
+        {activeTab === 'teacher_space' && userRole === 'teacher' && (
+          <div style={{ background: cardBg, padding: '32px', borderRadius: '24px', border: borderStyle, boxShadow: '6px 6px 0px #6b4c35' }}>
+            <h2 style={{ margin: '0 0 10px', fontSize: '24px', fontWeight: '900', color: inkColor, display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <School color="#8c5a3c" /> {t.teacherSpaceTitle}
+            </h2>
+            <p style={{ color: '#5a4231', fontWeight: '800', marginBottom: '24px' }}>
+              Sənin müəllim açarın: <strong style={{ background: innerBg, padding: '4px 8px', borderRadius: '6px', border: '1px solid #6b4c35' }}>{teacherKey}</strong>
+            </p>
+            <div style={{ background: innerBg, padding: '20px', borderRadius: '16px', border: '2px solid #6b4c35' }}>
+              <h3 style={{ margin: '0 0 12px', fontSize: '18px', fontWeight: '900' }}>Şagird Statistikaları</h3>
+              <p style={{ margin: 0, fontSize: '14px' }}>Bu açarla birləşdirilmiş şagirdlərin real vaxt rejimində XP və aktivlik nəticələri burada əks olunur.</p>
+            </div>
+          </div>
+        )}
 
         {/* FOOTER */}
         <footer style={{ textAlign: 'center', marginTop: '12px', padding: '8px', fontSize: '14px', fontWeight: '900', color: '#8c5a3c', letterSpacing: '1px' }}>
