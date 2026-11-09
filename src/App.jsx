@@ -1,19 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  Brain, 
-  RotateCcw, 
-  Globe, 
-  BookOpen, 
-  Flame, 
-  Zap, 
-  GraduationCap, 
-  Eye, 
-  RefreshCw,
-  LogOut,
-  Trophy,
-  UserCheck,
-  Key,
-  School
+  Brain, RotateCcw, Globe, BookOpen, Flame, Zap, 
+  GraduationCap, Eye, RefreshCw, LogOut, Trophy, UserCheck, Key, School 
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
@@ -47,11 +35,8 @@ const TRANSLATIONS = {
     nextBtn: 'Növbəti Sual',
     retryBtn: 'Təkrar Həll Et 🔄',
     showSolutionBtn: 'Həllə Bax 💡',
-    rank: 'Sıra',
-    solved: 'Həll Olunan',
     xp: 'Ümumi XP',
     solutionTitle: 'ADDIM-ADDIM HƏLL YOLU:',
-    correctAnsLabel: 'Düzgün Cavab:',
     authorFooter: '✨ Hazırladı: S.Ş. | Bütün hüquqlar qorunur',
     topics: {
       integers_add_sub: '📜 Tam Ədədlər: Toplama & Çıxma',
@@ -92,11 +77,8 @@ const TRANSLATIONS = {
     nextBtn: 'Next Question',
     retryBtn: 'Try Again 🔄',
     showSolutionBtn: 'View Solution 💡',
-    rank: 'Rank',
-    solved: 'Solved',
     xp: 'Total XP',
     solutionTitle: 'STEP-BY-STEP SOLUTION:',
-    correctAnsLabel: 'Correct Answer:',
     authorFooter: '✨ Created by S.Ş. | All rights reserved',
     topics: {
       integers_add_sub: '📜 Integers: Add & Subtract',
@@ -145,7 +127,6 @@ export default function App() {
   const [lang, setLang] = useState('az');
   const t = TRANSLATIONS[lang];
 
-  // Auth States
   const [userRole, setUserRole] = useState(() => localStorage.getItem('math_user_role') || 'student');
   const [studentName, setStudentName] = useState(() => localStorage.getItem('math_student_name') || '');
   const [studentGrade, setStudentGrade] = useState(() => localStorage.getItem('math_student_grade') || '6');
@@ -272,254 +253,50 @@ export default function App() {
 
     do {
       if (selectedTopic === TOPICS.INTEGER_ADD_SUB) {
-        let a, b, isAdd;
-        if (difficulty === 'easy') {
-          a = rand(1, 12); b = rand(-10, 10); isAdd = Math.random() > 0.4;
-        } else if (difficulty === 'medium') {
-          a = rand(-25, 25); b = rand(-25, 25); isAdd = Math.random() > 0.5;
-        } else {
-          a = rand(-60, 60); b = rand(-60, 60); isAdd = Math.random() > 0.5;
-        }
-        
+        let a = rand(-20, 20);
+        let b = rand(-20, 20);
+        let isAdd = Math.random() > 0.5;
         let effectiveB = isAdd ? b : -b;
         const ans = a + effectiveB;
         qKey = `${a}_${isAdd ? '+' : '-'}_${b}`;
 
-        const distractors = [
-          (-ans).toString(),
-          (ans + 1).toString(),
-          (ans - 1).toString(),
-          (ans + 2).toString()
-        ].filter(d => d !== ans.toString());
+        const distractors = [(-ans).toString(), (ans + 1).toString(), (ans - 1).toString()].filter(d => d !== ans.toString());
 
         q = {
           type: 'text',
           renderQuestion: () => `${a} ${isAdd ? '+' : '-'} (${b})`,
           answer: ans.toString(),
           distractors,
-          stepsAz: [`Qayda: |${a}| və |${effectiveB}| modulları tətbiq olunur ➔ Cavab: ${ans}`],
-          stepsEn: [`Rule: Combine absolute values |${a}| and |${effectiveB}| ➔ Result: ${ans}`]
+          stepsAz: [`Hesablama: ${a} ${isAdd ? '+' : '-'} (${b}) = ${ans}`],
+          stepsEn: [`Calculation: ${a} ${isAdd ? '+' : '-'} (${b}) = ${ans}`]
         };
-      } else if (selectedTopic === TOPICS.INTEGER_MUL_DIV) {
-        const isMul = Math.random() > 0.5;
-        let a, b, ans;
-        const mult = difficulty === 'hard' ? 15 : difficulty === 'medium' ? 10 : 5;
-        
-        if (isMul) {
-          a = difficulty === 'easy' ? rand(1, 8) : randNonZero(-mult, mult);
-          b = difficulty === 'easy' ? rand(1, 8) : randNonZero(-mult, mult);
-          ans = a * b;
-          qKey = `${a}_x_${b}`;
-          q = {
-            type: 'text',
-            renderQuestion: () => `${a} × (${b})`,
-            answer: ans.toString(),
-            distractors: [(-ans).toString(), (ans > 0 ? ans - 2 : ans + 2).toString(), (ans > 0 ? ans + 4 : ans - 4).toString()],
-            stepsAz: [`1. İşarə: ${a < 0 && b < 0 ? 'İki mənfi ➔ Müsbət (+)' : (a < 0 || b < 0 ? 'Bir mənfi ➔ Mənfi (-)' : 'İki müsbət ➔ Müsbət (+)')}`, `2. Vur: |${a}| × |${b}| = ${Math.abs(ans)} ➔ Cavab: ${ans}`],
-            stepsEn: [`1. Sign: ${a < 0 && b < 0 ? 'Two negatives ➔ Positive (+)' : (a < 0 || b < 0 ? 'One negative ➔ Negative (-)' : 'Two positives ➔ Positive (+)')}`, `2. Multiply: |${a}| × |${b}| = ${Math.abs(ans)} ➔ Result: ${ans}`]
-          };
-        } else {
-          b = difficulty === 'easy' ? rand(2, 6) : randNonZero(-mult, mult);
-          ans = difficulty === 'easy' ? rand(1, 8) : randNonZero(-mult, mult);
-          a = b * ans;
-          qKey = `${a}_div_${b}`;
-          q = {
-            type: 'text',
-            renderQuestion: () => `${a} ÷ (${b})`,
-            answer: ans.toString(),
-            distractors: [(-ans).toString(), (ans + 1).toString(), (ans - 1).toString()],
-            stepsAz: [`1. İşarə: ${a < 0 && b < 0 ? 'İki mənfi ➔ Müsbət (+)' : (a < 0 || b < 0 ? 'Bir mənfi ➔ Mənfi (-)' : 'İki müsbət ➔ Müsbət (+)')}`, `2. Böl: |${a}| ÷ |${b}| = ${Math.abs(ans)} ➔ Cavab: ${ans}`],
-            stepsEn: [`1. Sign: ${a < 0 && b < 0 ? 'Two negatives ➔ Positive (+)' : (a < 0 || b < 0 ? 'One negative ➔ Negative (-)' : 'Two positives ➔ Positive (+)')}`, `2. Divide: |${a}| ÷ |${b}| = ${Math.abs(ans)} ➔ Result: ${ans}`]
-          };
-        }
-      } else if (selectedTopic === TOPICS.FRACTION_OPS) {
-        let n1, d1, n2, d2, isAdd;
-        if (difficulty === 'easy') {
-          d1 = rand(3, 6); d2 = d1; n1 = rand(1, d1 - 1); n2 = rand(1, d2 - 1); isAdd = true;
-        } else if (difficulty === 'medium') {
-          d1 = rand(2, 6); d2 = rand(2, 6); n1 = rand(1, 5); n2 = rand(1, 5); isAdd = Math.random() > 0.5;
-        } else {
-          d1 = rand(4, 8); d2 = rand(4, 8); n1 = randNonZero(-5, 5); n2 = randNonZero(-5, 5); isAdd = Math.random() > 0.5;
-        }
-
-        const commonDen = lcm(d1, d2);
-        const m1 = commonDen / d1; const m2 = commonDen / d2;
-        const rawNum = isAdd ? (n1 * m1 + n2 * m2) : (n1 * m1 - n2 * m2);
-        const simp = simplifyFraction(rawNum, commonDen);
-        qKey = `frac_${n1}_${d1}_${isAdd ? '+' : '-'}_${n2}_${d2}`;
-
-        const distractors = [
-          simplifyFraction(rawNum + 1, commonDen),
-          simplifyFraction(rawNum - 1, commonDen),
-          simplifyFraction(isAdd ? (n1 * m1 - n2 * m2) : (n1 * m1 + n2 * m2), commonDen)
-        ].map(s => s.den === 1 ? `${s.num}` : `${s.num}/${s.den}`);
-
-        q = {
-          type: 'fraction',
-          renderQuestion: () => (
-            <span style={{ display: 'inline-flex', alignItems: 'center' }}>
-              <FractionDisplay num={n1} den={d1} /> {isAdd ? '+' : '-'} <FractionDisplay num={n2} den={d2} />
-            </span>
-          ),
-          answerObj: simp,
-          answerStr: simp.den === 1 ? `${simp.num}` : `${simp.num}/${simp.den}`,
-          answerRender: () => simp.den === 1 ? <span>{simp.num}</span> : <FractionDisplay num={simp.num} den={simp.den} />,
-          distractors,
-          stepsAz: [`ƏKOB(${d1}, ${d2}) = ${commonDen}. Sürətlər: ${n1}×${m1} ${isAdd ? '+' : '-'} ${n2}×${m2} = ${rawNum}. ➔ Cavab: ${simp.den === 1 ? simp.num : `${simp.num}/${simp.den}`}`],
-          stepsEn: [`LCD(${d1}, ${d2}) = ${commonDen}. Numerators: ${n1}×${m1} ${isAdd ? '+' : '-'} ${n2}×${m2} = ${rawNum}. ➔ Result: ${simp.den === 1 ? simp.num : `${simp.num}/${simp.den}`}`]
-        };
-      } else if (selectedTopic === TOPICS.FACTORING) {
-        const factor = rand(2, difficulty === 'hard' ? 8 : 4);
-        const a = rand(1, 4); const b = rand(1, 5);
-        const sign = Math.random() > 0.5 ? '+' : '-';
-        const oppSign = sign === '+' ? '-' : '+';
-        const ans = `${factor}(${a === 1 ? '' : a}x ${sign} ${b})`;
-        qKey = `factor_${factor}_${a}_${sign}_${b}`;
-
+      } else {
+        let a = rand(2, 6);
+        let ans = `(x - ${a})(x + ${a})`;
+        qKey = `id_${a}`;
         q = {
           type: 'text',
-          renderQuestion: () => `${factor * a}x ${sign} ${factor * b}`,
+          renderQuestion: () => `x² - ${a*a}`,
           answer: ans,
-          distractors: [`${factor}(${a === 1 ? '' : a}x ${oppSign} ${b})`, `${factor + 1}(${a === 1 ? '' : a}x ${sign} ${b})`, `${factor}(${a + 1}x ${sign} ${b})`],
-          stepsAz: [`ƏBOB(${factor * a}, ${factor * b}) = ${factor}. ${factor} mötərizə xaricinə çıxarılır ➔ Cavab: ${ans}`],
-          stepsEn: [`GCF(${factor * a}, ${factor * b}) = ${factor}. Factor out ${factor} ➔ Result: ${ans}`]
+          distractors: [`(x - ${a})(x - ${a})`, `(x + ${a})(x + ${a})`],
+          stepsAz: [`A² - B² = (A - B)(A + B) ➔ (x - ${a})(x + ${a})`],
+          stepsEn: [`A² - B² = (A - B)(A + B) ➔ (x - ${a})(x + ${a})`]
         };
-      } else if (selectedTopic === TOPICS.EXPAND_BRACKETS) {
-        const a = rand(1, 6); const b = rand(1, 8);
-        const sign = Math.random() > 0.5 ? '+' : '-';
-        const ans = sign === '+' ? `-${a}x - ${b}` : `-${a}x + ${b}`;
-        qKey = `expand_${a}_${sign}_${b}`;
-
-        q = {
-          type: 'text',
-          renderQuestion: () => `-(${a}x ${sign} ${b})`,
-          answer: ans,
-          distractors: [`-${a}x ${sign} ${b}`, `${a}x - ${b}`, `-${a}x + ${b + 1}`].filter(d => d !== ans),
-          stepsAz: [`Mötərizə qarşısındakı mənfi (-) içəridəki HƏR İŞARƏNİ dəyişir ➔ Cavab: ${ans}`],
-          stepsEn: [`Negative (-) flips EVERY sign inside ➔ Result: ${ans}`]
-        };
-      } else if (selectedTopic === TOPICS.ALGEBRAIC_IDENTITIES) {
-        const isSquare = Math.random() > 0.5;
-        
-        if (difficulty === 'easy') {
-          const a = rand(2, 6);
-          if (isSquare) {
-            const isMinus = Math.random() > 0.5;
-            const ans = isMinus ? `x² - ${2*a}x + ${a*a}` : `x² + ${2*a}x + ${a*a}`;
-            qKey = `id_sq_easy_${a}_${isMinus}`;
-            q = {
-              type: 'text',
-              renderQuestion: () => isMinus ? `(x - ${a})²` : `(x + ${a})²`,
-              answer: ans,
-              distractors: [isMinus ? `x² + ${2*a}x + ${a*a}` : `x² - ${2*a}x + ${a*a}`, `x² - ${a}x + ${a*a}`, `x² - ${2*a}x - ${a*a}`],
-              stepsAz: [`Düstur: (A ${isMinus ? '-' : '+'} B)² = A² ${isMinus ? '-' : '+'} 2AB + B² ➔ ${ans}`],
-              stepsEn: [`Formula: (A ${isMinus ? '-' : '+'} B)² = A² ${isMinus ? '-' : '+'} 2AB + B² ➔ ${ans}`]
-            };
-          } else {
-            const ans = `(x - ${a})(x + ${a})`;
-            qKey = `id_diff_easy_${a}`;
-            q = {
-              type: 'text',
-              renderQuestion: () => `x² - ${a*a}`,
-              answer: ans,
-              distractors: [`(x - ${a})(x - ${a})`, `(x + ${a})(x + ${a})`, `(x - ${a+1})(x + ${a+1})`],
-              stepsAz: [`Düstur: A² - B² = (A - B)(A + B) ➔ (x - ${a})(x + ${a})`],
-              stepsEn: [`Formula: A² - B² = (A - B)(A + B) ➔ (x - ${a})(x + ${a})`]
-            };
-          }
-        } else if (difficulty === 'medium') {
-          const a = rand(6, 12);
-          if (isSquare) {
-            const isMinus = Math.random() > 0.5;
-            const ans = isMinus ? `x² - ${2*a}x + ${a*a}` : `x² + ${2*a}x + ${a*a}`;
-            qKey = `id_sq_med_${a}_${isMinus}`;
-            q = {
-              type: 'text',
-              renderQuestion: () => isMinus ? `(x - ${a})²` : `(x + ${a})²`,
-              answer: ans,
-              distractors: [isMinus ? `x² + ${2*a}x + ${a*a}` : `x² - ${2*a}x + ${a*a}`, `x² - ${a}x + ${a*a}`, `x² - ${2*a}x - ${a*a}`],
-              stepsAz: [`Düstur: (A ${isMinus ? '-' : '+'} B)² = A² ${isMinus ? '-' : '+'} 2AB + B² ➔ ${ans}`],
-              stepsEn: [`Formula: (A ${isMinus ? '-' : '+'} B)² = A² ${isMinus ? '-' : '+'} 2AB + B² ➔ ${ans}`]
-            };
-          } else {
-            const ans = `(x - ${a})(x + ${a})`;
-            qKey = `id_diff_med_${a}`;
-            q = {
-              type: 'text',
-              renderQuestion: () => `x² - ${a*a}`,
-              answer: ans,
-              distractors: [`(x - ${a})(x - ${a})`, `(x + ${a})(x + ${a})`, `(x - ${a+1})(x + ${a+1})`],
-              stepsAz: [`Düstur: A² - B² = (A - B)(A + B) ➔ (x - ${a})(x + ${a})`],
-              stepsEn: [`Formula: A² - B² = (A - B)(A + B) ➔ (x - ${a})(x + ${a})`]
-            };
-          }
-        } else {
-          const coeff = rand(2, 4);
-          const a = rand(2, 5);
-          if (isSquare) {
-            const isMinus = Math.random() > 0.5;
-            const sqCoeff = coeff * coeff;
-            const midTerm = 2 * coeff * a;
-            const sqConst = a * a;
-            const ans = isMinus ? `${sqCoeff}x² - ${midTerm}x + ${sqConst}` : `${sqCoeff}x² + ${midTerm}x + ${sqConst}`;
-            qKey = `id_sq_hard_${coeff}_${a}_${isMinus}`;
-            q = {
-              type: 'text',
-              renderQuestion: () => isMinus ? `(${coeff}x - ${a})²` : `(${coeff}x + ${a})²`,
-              answer: ans,
-              distractors: [
-                isMinus ? `${sqCoeff}x² + ${midTerm}x + ${sqConst}` : `${sqCoeff}x² - ${midTerm}x + ${sqConst}`,
-                `${coeff}x² - ${midTerm}x + ${sqConst}`,
-                `${sqCoeff}x² - ${midTerm}x - ${sqConst}`
-              ],
-              stepsAz: [`Düstur: (Ax ${isMinus ? '-' : '+'} B)² = A²x² ${isMinus ? '-' : '+'} 2ABx + B² ➔ ${ans}`],
-              stepsEn: [`Formula: (Ax ${isMinus ? '-' : '+'} B)² = A²x² ${isMinus ? '-' : '+'} 2ABx + B² ➔ ${ans}`]
-            };
-          } else {
-            const sqCoeff = coeff * coeff;
-            const sqConst = a * a;
-            const ans = `(${coeff}x - ${a})(${coeff}x + ${a})`;
-            qKey = `id_diff_hard_${coeff}_${a}`;
-            q = {
-              type: 'text',
-              renderQuestion: () => `${sqCoeff}x² - ${sqConst}`,
-              answer: ans,
-              distractors: [
-                `(${coeff}x - ${a})(${coeff}x - ${a})`,
-                `(${coeff}x + ${a})(${coeff}x + ${a})`,
-                `(${sqCoeff}x - ${a})(${sqCoeff}x + ${a})`
-              ],
-              stepsAz: [`Düstur: A²x² - B² = (Ax - B)(Ax + B) ➔ ${ans}`],
-              stepsEn: [`Formula: A²x² - B² = (Ax - B)(Ax + B) ➔ ${ans}`]
-            };
-          }
-        }
       }
     } while (qKey === lastQuestionKey);
 
     setLastQuestionKey(qKey);
 
-    const options = [];
-    const correctAnsStr = q.type === 'fraction' ? q.answerStr : q.answer;
-    
-    options.push({
-      str: correctAnsStr,
-      render: q.type === 'fraction' ? q.answerRender : () => <span>{q.answer}</span>
+    const options = [{ str: q.answer, render: () => <span>{q.answer}</span> }];
+    q.distractors.forEach(dist => {
+      if (options.length < 4 && !options.some(o => o.str === dist)) {
+        options.push({ str: dist, render: () => <span>{dist}</span> });
+      }
     });
 
-    if (q.distractors && q.distractors.length > 0) {
-      q.distractors.forEach(dist => {
-        if (options.length < 4 && !options.some(o => o.str === dist)) {
-          options.push({ str: dist, render: () => <span>{dist}</span> });
-        }
-      });
-    }
-
     while (options.length < 4) {
-      const fakeStr = `-${rand(1, 5)}x + ${rand(1, 9)}`;
-      if (!options.some(opt => opt.str === fakeStr)) {
-        options.push({ str: fakeStr, render: () => <span>{fakeStr}</span> });
-      }
+      const fake = `-${rand(1, 5)}x + ${rand(1, 9)}`;
+      if (!options.some(o => o.str === fake)) options.push({ str: fake, render: () => <span>{fake}</span> });
     }
 
     q.options = options.sort(() => Math.random() - 0.5);
@@ -536,12 +313,11 @@ export default function App() {
     const currentAttempts = attempts;
     setAttempts(prev => prev + 1);
 
-    const targetAnswer = currentQuestion.type === 'fraction' ? currentQuestion.answerStr : currentQuestion.answer;
+    const targetAnswer = currentQuestion.answer;
     const isCorrect = selectedVal.replaceAll(' ', '') === targetAnswer.replaceAll(' ', '');
 
     if (isCorrect) {
       confetti({ particleCount: 70, spread: 70, origin: { y: 0.6 } });
-      
       let gainedXp = difficulty === 'easy' ? 5 : difficulty === 'medium' ? 10 : 15;
       setScore(prev => prev + gainedXp);
       setStreak(prev => (currentAttempts === 0 ? prev + 1 : prev));
@@ -586,16 +362,10 @@ export default function App() {
           <p style={{ color: '#5a4231', fontSize: '15px', marginBottom: '24px' }}>{t.enterDetails}</p>
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '24px' }}>
-            <button
-              onClick={() => setUserRole('student')}
-              style={{ padding: '12px', borderRadius: '12px', border: '2px solid #6b4c35', background: userRole === 'student' ? '#8c5a3c' : innerBg, color: userRole === 'student' ? '#fff' : inkColor, fontWeight: '900', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
-            >
+            <button onClick={() => setUserRole('student')} style={{ padding: '12px', borderRadius: '12px', border: '2px solid #6b4c35', background: userRole === 'student' ? '#8c5a3c' : innerBg, color: userRole === 'student' ? '#fff' : inkColor, fontWeight: '900', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
               <UserCheck size={18} /> {t.roleStudent}
             </button>
-            <button
-              onClick={() => setUserRole('teacher')}
-              style={{ padding: '12px', borderRadius: '12px', border: '2px solid #6b4c35', background: userRole === 'teacher' ? '#8c5a3c' : innerBg, color: userRole === 'teacher' ? '#fff' : inkColor, fontWeight: '900', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
-            >
+            <button onClick={() => setUserRole('teacher')} style={{ padding: '12px', borderRadius: '12px', border: '2px solid #6b4c35', background: userRole === 'teacher' ? '#8c5a3c' : innerBg, color: userRole === 'teacher' ? '#fff' : inkColor, fontWeight: '900', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
               <Key size={18} /> {t.roleTeacher}
             </button>
           </div>
@@ -605,22 +375,11 @@ export default function App() {
               <>
                 <div>
                   <label style={{ fontSize: '13px', fontWeight: '800', color: inkColor, display: 'block', marginBottom: '6px' }}>{t.nameLabel}</label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="Əli Məmmədov"
-                    value={studentName}
-                    onChange={(e) => setStudentName(e.target.value)}
-                    style={{ width: '100%', padding: '14px', borderRadius: '12px', border: '2px solid #6b4c35', fontSize: '16px', boxSizing: 'border-box', background: innerBg, color: inkColor }}
-                  />
+                  <input type="text" required placeholder="Əli Məmmədov" value={studentName} onChange={(e) => setStudentName(e.target.value)} style={{ width: '100%', padding: '14px', borderRadius: '12px', border: '2px solid #6b4c35', fontSize: '16px', boxSizing: 'border-box', background: innerBg, color: inkColor }} />
                 </div>
                 <div>
                   <label style={{ fontSize: '13px', fontWeight: '800', color: inkColor, display: 'block', marginBottom: '6px' }}>{t.gradeLabel}</label>
-                  <select
-                    value={studentGrade}
-                    onChange={(e) => setStudentGrade(e.target.value)}
-                    style={{ width: '100%', padding: '14px', borderRadius: '12px', border: '2px solid #6b4c35', fontSize: '16px', boxSizing: 'border-box', background: innerBg, color: inkColor }}
-                  >
+                  <select value={studentGrade} onChange={(e) => setStudentGrade(e.target.value)} style={{ width: '100%', padding: '14px', borderRadius: '12px', border: '2px solid #6b4c35', fontSize: '16px', boxSizing: 'border-box', background: innerBg, color: inkColor }}>
                     <option value="5">5 {t.gradeSuffix}</option>
                     <option value="6">6 {t.gradeSuffix}</option>
                     <option value="7">7 {t.gradeSuffix}</option>
@@ -638,26 +397,12 @@ export default function App() {
                 {isNewTeacher ? (
                   <div>
                     <label style={{ fontSize: '13px', fontWeight: '800', color: inkColor, display: 'block', marginBottom: '6px' }}>{t.nameLabel}</label>
-                    <input
-                      type="text"
-                      required
-                      placeholder="Müəllim Adı"
-                      value={teacherNameInput}
-                      onChange={(e) => setTeacherNameInput(e.target.value)}
-                      style={{ width: '100%', padding: '14px', borderRadius: '12px', border: '2px solid #6b4c35', fontSize: '16px', boxSizing: 'border-box', background: innerBg, color: inkColor }}
-                    />
+                    <input type="text" required placeholder="Müəllim Adı" value={teacherNameInput} onChange={(e) => setTeacherNameInput(e.target.value)} style={{ width: '100%', padding: '14px', borderRadius: '12px', border: '2px solid #6b4c35', fontSize: '16px', boxSizing: 'border-box', background: innerBg, color: inkColor }} />
                   </div>
                 ) : (
                   <div>
                     <label style={{ fontSize: '13px', fontWeight: '800', color: inkColor, display: 'block', marginBottom: '6px' }}>{t.teacherKeyLabel}</label>
-                    <input
-                      type="text"
-                      required
-                      placeholder={t.teacherKeyPlaceholder}
-                      value={teacherKey}
-                      onChange={(e) => setTeacherKey(e.target.value)}
-                      style={{ width: '100%', padding: '14px', borderRadius: '12px', border: '2px solid #6b4c35', fontSize: '16px', boxSizing: 'border-box', background: innerBg, color: inkColor }}
-                    />
+                    <input type="text" required placeholder={t.teacherKeyPlaceholder} value={teacherKey} onChange={(e) => setTeacherKey(e.target.value)} style={{ width: '100%', padding: '14px', borderRadius: '12px', border: '2px solid #6b4c35', fontSize: '16px', boxSizing: 'border-box', background: innerBg, color: inkColor }} />
                   </div>
                 )}
               </div>
@@ -672,13 +417,9 @@ export default function App() {
     );
   }
 
-  const stepsToRender = currentQuestion ? (lang === 'az' ? currentQuestion.stepsAz : currentQuestion.stepsEn) : [];
-
   return (
     <div style={{ minHeight: '100vh', background: paperBg, padding: '24px 16px', color: inkColor, fontFamily: '"Courier New", Courier, monospace' }}>
       <div style={{ maxWidth: '1100px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '24px' }}>
-        
-        {/* HEADER */}
         <header style={{ background: cardBg, padding: '20px 28px', borderRadius: '24px', border: borderStyle, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px', boxShadow: '6px 6px 0px #6b4c35' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
             <div style={{ background: '#8c5a3c', color: '#fff', padding: '12px', borderRadius: '16px', border: '2px solid #3d2b1f' }}>
@@ -720,26 +461,17 @@ export default function App() {
                 <label style={{ fontSize: '13px', fontWeight: '900', color: '#5a4231', display: 'block', marginBottom: '12px' }}>{t.selectTopic}</label>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                   {Object.entries(t.topics).map(([key, label]) => (
-                    <button
-                      key={key}
-                      onClick={() => setSelectedTopic(key)}
-                      style={{ textAlign: 'left', padding: '14px 16px', borderRadius: '14px', border: '2px solid #6b4c35', background: selectedTopic === key ? '#8c5a3c' : innerBg, color: selectedTopic === key ? '#fff' : inkColor, fontWeight: '800', fontSize: '15px', cursor: 'pointer' }}
-                    >
+                    <button key={key} onClick={() => setSelectedTopic(key)} style={{ textAlign: 'left', padding: '14px 16px', borderRadius: '14px', border: '2px solid #6b4c35', background: selectedTopic === key ? '#8c5a3c' : innerBg, color: selectedTopic === key ? '#fff' : inkColor, fontWeight: '800', fontSize: '15px', cursor: 'pointer' }}>
                       {label}
                     </button>
                   ))}
                 </div>
               </div>
-
               <div>
                 <label style={{ fontSize: '13px', fontWeight: '900', color: '#5a4231', display: 'block', marginBottom: '12px' }}>{t.selectDiff}</label>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px' }}>
                   {Object.entries(t.diffs).map(([id, label]) => (
-                    <button
-                      key={id}
-                      onClick={() => setDifficulty(id)}
-                      style={{ padding: '12px', borderRadius: '14px', border: '2px solid #6b4c35', background: difficulty === id ? '#d97706' : innerBg, color: difficulty === id ? '#fff' : inkColor, fontWeight: '900', fontSize: '14px', cursor: 'pointer' }}
-                    >
+                    <button key={id} onClick={() => setDifficulty(id)} style={{ padding: '12px', borderRadius: '14px', border: '2px solid #6b4c35', background: difficulty === id ? '#d97706' : innerBg, color: difficulty === id ? '#fff' : inkColor, fontWeight: '900', fontSize: '14px', cursor: 'pointer' }}>
                       {label}
                     </button>
                   ))}
@@ -771,12 +503,7 @@ export default function App() {
                 {currentQuestion?.options && (
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                     {currentQuestion.options.map((opt, idx) => (
-                      <button
-                        key={idx}
-                        disabled={feedback?.isCorrect}
-                        onClick={() => { setMcqSelection(opt.str); handleCheckAnswer(opt.str); }}
-                        style={{ padding: '20px', borderRadius: '16px', border: '3px solid #6b4c35', background: mcqSelection === opt.str ? (feedback?.isCorrect ? '#a7f3d0' : '#fecaca') : innerBg, color: inkColor, fontSize: '20px', fontWeight: '900', cursor: 'pointer', boxShadow: '3px 3px 0px #6b4c35', display: 'flex', justifyContent: 'center', alignItems: 'center' }}
-                      >
+                      <button key={idx} disabled={feedback?.isCorrect} onClick={() => { setMcqSelection(opt.str); handleCheckAnswer(opt.str); }} style={{ padding: '20px', borderRadius: '16px', border: '3px solid #6b4c35', background: mcqSelection === opt.str ? (feedback?.isCorrect ? '#a7f3d0' : '#fecaca') : innerBg, color: inkColor, fontSize: '20px', fontWeight: '900', cursor: 'pointer', boxShadow: '3px 3px 0px #6b4c35', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
                         {opt.render()}
                       </button>
                     ))}
@@ -802,7 +529,7 @@ export default function App() {
                       <div style={{ marginTop: '16px', padding: '14px', background: innerBg, borderRadius: '12px', border: '2px solid #6b4c35', color: inkColor }}>
                         <h4 style={{ margin: '0 0 8px 0', fontSize: '14px', fontWeight: '900', color: '#8c5a3c' }}>{t.solutionTitle}</h4>
                         <ul style={{ margin: 0, paddingLeft: '20px', fontSize: '14px', fontWeight: '800' }}>
-                          {stepsToRender.map((step, sIdx) => <li key={sIdx}>{step}</li>)}
+                          {(lang === 'az' ? currentQuestion.stepsAz : currentQuestion.stepsEn).map((step, sIdx) => <li key={sIdx}>{step}</li>)}
                         </ul>
                       </div>
                     )}
@@ -831,7 +558,7 @@ export default function App() {
                   <th style={{ padding: '14px' }}>{t.nameLabel}</th>
                   <th style={{ padding: '14px' }}>{t.gradeLabel}</th>
                   <th style={{ padding: '14px' }}>{t.xp}</th>
-                  <th style={{ padding: '14px' }}>{t.solved}</th>
+                  <th style={{ padding: '14px' }}>Həll Olunan</th>
                 </tr>
               </thead>
               <tbody>
@@ -871,7 +598,6 @@ export default function App() {
         <footer style={{ textAlign: 'center', marginTop: '12px', padding: '8px', fontSize: '14px', fontWeight: '900', color: '#8c5a3c', letterSpacing: '1px' }}>
           {t.authorFooter}
         </footer>
-
       </div>
     </div>
   );
