@@ -233,20 +233,20 @@ export default function App() {
     setTeacherKey('');
   };
 
-  const updateLeaderboard = (gainedXp) => {
+  const updateLeaderboard = (gainedXp, isCorrect = true) => {
     setLeaderboard(prev => {
       const existingIdx = prev.findIndex(item => item.name.toLowerCase() === studentName.toLowerCase() && item.grade === studentGrade);
       let updated = [...prev];
       if (existingIdx >= 0) {
-        updated[existingIdx].xp += gainedXp;
-        updated[existingIdx].totalSolved += 1;
+        updated[existingIdx].xp = Math.max(0, updated[existingIdx].xp + gainedXp);
+        if (isCorrect) updated[existingIdx].totalSolved += 1;
       } else {
         updated.push({
           id: Date.now(),
           name: studentName,
           grade: studentGrade,
-          xp: gainedXp,
-          totalSolved: 1
+          xp: Math.max(0, gainedXp),
+          totalSolved: isCorrect ? 1 : 0
         });
       }
       return updated.sort((a, b) => b.xp - a.xp).slice(0, 10);
@@ -359,10 +359,7 @@ export default function App() {
     if (isCorrect) {
       confetti({ particleCount: 70, spread: 70, origin: { y: 0.6 } });
       
-      let gainedXp = difficulty === 'easy' ? (currentAttempts === 0 ? 5 : currentAttempts === 1 ? 4 : 3) 
-                   : difficulty === 'medium' ? (currentAttempts === 0 ? 10 : currentAttempts === 1 ? 8 : 6)
-                   : (currentAttempts === 0 ? 15 : currentAttempts === 1 ? 12 : 9);
-
+      let gainedXp = difficulty === 'easy' ? 5 : difficulty === 'medium' ? 10 : 15;
       setScore(prev => prev + gainedXp);
       setStreak(prev => (currentAttempts === 0 ? prev + 1 : prev));
       setFeedback({ 
@@ -372,9 +369,14 @@ export default function App() {
       setShowDetailedExplanation(false);
       updateLeaderboard(gainedXp);
     } else {
-      // RESET STREAK ON WRONG ATTEMPT
       setStreak(0);
-      setFeedback({ isCorrect: false, msg: t.streakResetMsg });
+      let penaltyXp = difficulty === 'easy' ? 5 : difficulty === 'medium' ? 10 : 15;
+      setScore(prev => Math.max(0, prev - penaltyXp));
+      setFeedback({ 
+        isCorrect: false, 
+        msg: lang === 'az' ? `⚠️ SƏHV CAVAB! -${penaltyXp} XP çıxıldı, Streak 0 oldu.` : `⚠️ WRONG ANSWER! -${penaltyXp} XP deducted, Streak reset to 0.` 
+      });
+      updateLeaderboard(-penaltyXp);
     }
   };
 
@@ -440,6 +442,9 @@ export default function App() {
                   >
                     <option value="5">5 {t.gradeSuffix}</option>
                     <option value="6">6 {t.gradeSuffix}</option>
+                    <option value="7">7 {t.gradeSuffix}</option>
+                    <option value="8">8 {t.gradeSuffix}</option>
+                    <option value="9">9 {t.gradeSuffix}</option>
                   </select>
                 </div>
               </>
