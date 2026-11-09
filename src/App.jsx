@@ -259,13 +259,48 @@ export default function App() {
 
         const distractors = [(-ans).toString(), (ans + 1).toString(), (ans - 1).toString()].filter(d => d !== ans.toString());
 
+        const modA = Math.abs(a);
+        const modB = Math.abs(effectiveB);
+        const stepsAz = [];
+        const stepsEn = [];
+
+        if (!isAdd) {
+          stepsAz.push(`1. Çıxma əməli toplama kimi yazılır: ${a} - (${b}) ➔ ${a} + (${effectiveB})`);
+          stepsEn.push(`1. Convert subtraction to addition: ${a} - (${b}) ➔ ${a} + (${effectiveB})`);
+        }
+
+        if ((a < 0 && effectiveB > 0) || (a > 0 && effectiveB < 0)) {
+          const largerMod = modA > modB ? a : effectiveB;
+          const largerVal = Math.max(modA, modB);
+          const smallerVal = Math.min(modA, modB);
+          const signStr = largerMod < 0 ? 'mənfi (-)' : 'müsbət (+)';
+
+          stepsAz.push(`📌 İşarələr müxtəlifdir: biri mənfi, digəri müsbətdir.`);
+          stepsAz.push(`🔍 Modulların müqayisəsi: |${a}| = ${modA}, |${effectiveB}| = ${modB}. Modulu böyük olan ${largerVal}-dir (işarəsi ${signStr}).`);
+          stepsAz.push(`✏️ Hesablama: Modulu böyük olandan kiçiyi çıxırıq: ${largerVal} - ${smallerVal} = ${largerVal - smallerVal}.`);
+          stepsAz.push(`💡 Yekun: Nəticəyə modulu böyük olanın işarəsi yazılır ➔ Cavab: ${ans}`);
+
+          stepsEn.push(`📌 Signs are different: one is negative, one is positive.`);
+          stepsEn.push(`🔍 Compare absolute values: |${a}| = ${modA}, |${effectiveB}| = ${modB}. Larger absolute value is ${largerVal}.`);
+          stepsEn.push(`✏️ Calculation: Subtract smaller from larger: ${largerVal} - ${smallerVal} = ${largerVal - smallerVal}.`);
+          stepsEn.push(`💡 Result: Apply sign of larger absolute value ➔ Result: ${ans}`);
+        } else {
+          stepsAz.push(`📌 İşarələr eynidir: hər iki ədəd ${a < 0 ? 'mənfidir' : 'müsbətdir'}.`);
+          stepsAz.push(`✏️ Hesablama: Modulları toplayırıq: ${modA} + ${modB} = ${modA + modB}.`);
+          stepsAz.push(`💡 Yekun: Ortaq işarə saxlanılır ➔ Cavab: ${ans}`);
+
+          stepsEn.push(`📌 Signs are the same: both are ${a < 0 ? 'negative' : 'positive'}.`);
+          stepsEn.push(`✏️ Calculation: Add absolute values: ${modA} + ${modB} = ${modA + modB}.`);
+          stepsEn.push(`💡 Result: Keep common sign ➔ Result: ${ans}`);
+        }
+
         q = {
           type: 'text',
           renderQuestion: () => `${a} ${isAdd ? '+' : '-'} (${b})`,
           answer: ans.toString(),
           distractors,
-          stepsAz: [`Hesablama: ${a} ${isAdd ? '+' : '-'} (${b}) = ${ans}`],
-          stepsEn: [`Calculation: ${a} ${isAdd ? '+' : '-'} (${b}) = ${ans}`]
+          stepsAz,
+          stepsEn
         };
       } else {
         let a = rand(2, 6);
@@ -489,16 +524,16 @@ export default function App() {
                 </div>
 
                 {currentQuestion && (
-                  <div style={{ textAlign: 'center', padding: '40px 20px', background: innerBg, borderRadius: '24px', border: '3px dashed #6b4c35' }}>
+                  <div style={{ textAlign: 'center', padding: '24px 12px', background: innerBg, borderRadius: '24px', border: '3px dashed #6b4c35', overflowX: 'auto' }}>
                     <p style={{ margin: '0 0 12px', fontSize: '14px', fontWeight: '900', color: '#8c5a3c' }}>{t.solvePrompt}</p>
-                    <div style={{ fontSize: '38px', fontWeight: '900', color: inkColor, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                    <div style={{ fontSize: 'clamp(22px, 6vw, 36px)', fontWeight: '900', color: inkColor, display: 'flex', justifyContent: 'center', alignItems: 'center', flexWrap: 'nowrap', whiteSpace: 'nowrap' }}>
                       {currentQuestion.renderQuestion()} = ?
                     </div>
                   </div>
                 )}
 
                 {currentQuestion?.options && (
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '12px' }}>
                     {currentQuestion.options.map((opt, idx) => (
                       <button key={idx} disabled={feedback?.isCorrect} onClick={() => { setMcqSelection(opt.str); handleCheckAnswer(opt.str); }} style={{ padding: '20px', borderRadius: '16px', border: '3px solid #6b4c35', background: mcqSelection === opt.str ? (feedback?.isCorrect ? '#a7f3d0' : '#fecaca') : innerBg, color: inkColor, fontSize: '20px', fontWeight: '900', cursor: 'pointer', boxShadow: '3px 3px 0px #6b4c35', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
                         {opt.render()}
