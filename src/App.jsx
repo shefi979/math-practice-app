@@ -151,10 +151,7 @@ export default function App() {
   const [feedback, setFeedback] = useState(null);
   const [showDetailedExplanation, setShowDetailedExplanation] = useState(false);
 
-  const [leaderboard, setLeaderboard] = useState(() => {
-    const saved = localStorage.getItem('math_leaderboard');
-    return saved ? JSON.parse(saved) : [];
-  });
+  const [leaderboard, setLeaderboard] = useState([]);
 
   useEffect(() => {
     localStorage.setItem('math_leaderboard', JSON.stringify(leaderboard));
